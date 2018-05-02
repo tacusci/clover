@@ -4,12 +4,13 @@ import (
 	"os"
 	"flag"
 	"github.com/tacusci/clover/cltools"
+	"fmt"
 )
 
 func OutputUsage() {
 	println("Usage: " + os.Args[0] + " </TOOLFLAG>")
-	println("    /sdc (StorageDeviceChecker) - Tool for checking size of storage devices.")
-	println("    /rtc (RawToCompressed) - Tool for batch compressing raw images.")
+	fmt.Printf("\t/sdc (StorageDeviceChecker) - Tool for checking size of storage devices.\n")
+	fmt.Printf("\t/rtc (RawToCompressed) - Tool for batch compressing raw images.\n")
 }
 
 func OutputUsageAndClose() {
