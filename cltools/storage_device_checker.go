@@ -25,19 +25,19 @@ func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, d
 	}
 
 	if sizeToWrite > 0 {
-		fileCount, totalWrittenBytes, timeElapsed := WriteDataToLocation(locationPath, sizeToWrite)
+		fileCount, totalWrittenBytes, timeElapsed := writeDataToLocation(locationPath, sizeToWrite)
 
 		var passed = false
 
 		if (!skipFileIntegrityCheck) {
-			passed = Verify(fileCount, locationPath)
+			passed = verify(fileCount, locationPath)
 		}
-		Tidy(dontDeleteFiles, fileCount, locationPath)
-		OutputSummary(sizeToWrite, totalWrittenBytes, locationPath, passed, skipFileIntegrityCheck, timeElapsed)
+		tidy(dontDeleteFiles, fileCount, locationPath)
+		outputSummary(sizeToWrite, totalWrittenBytes, locationPath, passed, skipFileIntegrityCheck, timeElapsed)
 	}
 }
 
-func WriteDataToLocation(location string, size int) (int, int, time.Duration) {
+func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 	//bytes in 1MB
 	var byteChunkSize int = 1024 * 1000
 	var totalWrittenBytes int = 0
@@ -57,7 +57,7 @@ func WriteDataToLocation(location string, size int) (int, int, time.Duration) {
 				filename = strings.Replace(filename, ":/", ":\\", -1)
 			}
 			file, err := os.Create(filename)
-			Check(err)
+			check(err)
 			defer file.Close()
 			bufferedWriter := bufio.NewWriter(file)
 			rand.Seed(int64(fileCount))
@@ -84,7 +84,7 @@ func WriteDataToLocation(location string, size int) (int, int, time.Duration) {
 	return fileCount, totalWrittenBytes, time.Now().Sub(startTime)
 }
 
-func Verify(fileCount int, location string) bool {
+func verify(fileCount int, location string) bool {
 
 	rColor := color.New(color.FgRed).Add(color.Bold)
 
@@ -94,16 +94,16 @@ func Verify(fileCount int, location string) bool {
 		defer file.Close()
 		checksumBytes := make([]byte, 16)
 		_, err = file.Seek(0, 0)
-		Check(err)
+		check(err)
 		_, err = file.Read(checksumBytes)
-		Check(err)
+		check(err)
 		fullFileBytes := make([]byte, 1024 * 1000)
 		file.Seek(0, 0)
 		file.Read(fullFileBytes)
 		for i := 0; i < 17; i++ { fullFileBytes[i] = 0 }
 		checksumFromFileContents := md5.Sum(fullFileBytes)
 		//if checksumFromFileContents[:] != fullFileBytes[:] {
-		if CompareHashBytes(checksumFromFileContents[:], fullFileBytes[:]) {
+		if compareHashBytes(checksumFromFileContents[:], fullFileBytes[:]) {
 			rColor.Println("Incorrect checksum for file -> %v", file.Name())
 			return false
 		}
@@ -111,7 +111,7 @@ func Verify(fileCount int, location string) bool {
 	return true
 }
 
-func OutputSummary(sizeToWrite int, totalWrittenBytes int, location string, verificationPassed bool, skipFileIntegrityCheck bool, timeElapsed time.Duration) {
+func outputSummary(sizeToWrite int, totalWrittenBytes int, location string, verificationPassed bool, skipFileIntegrityCheck bool, timeElapsed time.Duration) {
 	yColor := color.New(color.FgYellow)
 	yBoldColor := color.New(color.FgYellow).Add(color.Bold)
 	rColor := color.New(color.FgRed)
@@ -130,7 +130,7 @@ func OutputSummary(sizeToWrite int, totalWrittenBytes int, location string, veri
 	}
 }
 
-func Tidy(dontDeleteFiles bool, fileCount int, location string) {
+func tidy(dontDeleteFiles bool, fileCount int, location string) {
 	yColor := color.New(color.FgYellow)
 	if !dontDeleteFiles {
 		yColor.Printf("Deleting %v data files...\n", fileCount)
@@ -142,7 +142,7 @@ func Tidy(dontDeleteFiles bool, fileCount int, location string) {
 	}
 }
 
-func CompareHashBytes(hashBytes1 []byte, hashBytes2 []byte) bool {
+func compareHashBytes(hashBytes1 []byte, hashBytes2 []byte) bool {
 	if len(hashBytes1) != len(hashBytes2) { return false }
 	for i := range hashBytes1 {
 		if (hashBytes1[i] != hashBytes2[i]) { return false }
@@ -150,7 +150,7 @@ func CompareHashBytes(hashBytes1 []byte, hashBytes2 []byte) bool {
 	return true
 }
 
-func Check(err error) {
+func check(err error) {
 	if err != nil {
 		panic(err)
 	}

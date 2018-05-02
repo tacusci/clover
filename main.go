@@ -8,29 +8,27 @@ import (
 	"github.com/tacusci/clover/cltools"
 )
 
-//OutputUsage to just output usage contents to the CLI
-func OutputUsage() {
+func outputUsage() {
 	println("Usage: " + os.Args[0] + " </TOOLFLAG>")
 	fmt.Printf("\t/sdc (StorageDeviceChecker) - Tool for checking size of storage devices.\n")
 	fmt.Printf("\t/rtc (RawToCompressed) - Tool for batch compressing raw images.\n")
 }
 
-func OutputUsageAndClose() {
-	OutputUsage()
+func outputUsageAndClose() {
+	outputUsage()
 	os.Exit(1)
 }
 
 func main() {
 
 	if len(os.Args) == 1 {
-		OutputUsageAndClose()
+		outputUsageAndClose()
 	}
 
-	RunTool(os.Args[1])
+	runTool(os.Args[1])
 }
 
-//RunTool depending on first CLI argument run appropriate tool
-func RunTool(toolFlag string) {
+func runTool(toolFlag string) {
 	if toolFlag == "/sdc" {
 		locationPath := flag.String("location", "", "Location to write data to.")
 		sizeToWrite := flag.Int("size", 0, "Size of total data to write.")
@@ -56,6 +54,6 @@ func RunTool(toolFlag string) {
 
 		cltools.RunRtc(*sourceDirectory, *inputType, *outputType)
 	} else {
-		OutputUsageAndClose()
+		outputUsageAndClose()
 	}
 }
