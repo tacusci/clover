@@ -1,12 +1,14 @@
 package main
 
 import (
-	"os"
 	"flag"
-	"github.com/tacusci/clover/cltools"
 	"fmt"
+	"os"
+
+	"github.com/tacusci/clover/cltools"
 )
 
+//OutputUsage to just output usage contents to the CLI
 func OutputUsage() {
 	println("Usage: " + os.Args[0] + " </TOOLFLAG>")
 	fmt.Printf("\t/sdc (StorageDeviceChecker) - Tool for checking size of storage devices.\n")
@@ -27,6 +29,7 @@ func main() {
 	RunTool(os.Args[1])
 }
 
+//RunTool depending on first CLI argument run appropriate tool
 func RunTool(toolFlag string) {
 	if toolFlag == "/sdc" {
 		locationPath := flag.String("location", "", "Location to write data to.")
@@ -44,14 +47,15 @@ func RunTool(toolFlag string) {
 	} else if toolFlag == "/rtc" {
 		sourceDirectory := flag.String("source-directory", "", "Location containing raw images to convert.")
 		inputType := flag.String("input-type", "", "Extension of image type to convert.")
+		outputType := flag.String("output-type", "", "Extension of image type to output to.")
 
 		//kind of hack to force flag parser to find tool argument flags correctly
 		os.Args = os.Args[1:]
 
 		flag.Parse()
 
-		cltools.RunRtc(*sourceDirectory, *inputType, ".jpg")
-	}  else {
+		cltools.RunRtc(*sourceDirectory, *inputType, *outputType)
+	} else {
 		OutputUsageAndClose()
 	}
 }
