@@ -19,7 +19,7 @@ const (
 type tiffHeaderData struct {
 	endianOrder endian
 	magicNum    uint16
-	tiff0Offset uint32
+	tiffOffset  uint32
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -109,15 +109,15 @@ func getTiffData(header []byte) (*tiffHeaderData, error) {
 		tiffData.magicNum = magicNum
 		tiffData.endianOrder = endianOrder
 
-		var tiff0Offset uint32
+		var tiffOffset uint32
 		if tiffData.endianOrder == bigEndian {
-			tiff0Offset |= uint32(header[4]) << 24
-			tiff0Offset |= uint32(header[5]) << 16
-			tiff0Offset |= uint32(header[6]) << 8
-			tiff0Offset |= uint32(header[7])
+			tiffOffset |= uint32(header[4]) << 24
+			tiffOffset |= uint32(header[5]) << 16
+			tiffOffset |= uint32(header[6]) << 8
+			tiffOffset |= uint32(header[7])
 		}
 
-		tiffData.tiff0Offset = tiff0Offset
+		tiffData.tiffOffset = tiffOffset
 	} else {
 		return tiffData, errors.New("Header incorrect length")
 	}
