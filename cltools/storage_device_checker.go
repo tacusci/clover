@@ -7,12 +7,11 @@ import (
 	"math/rand"
 	"os"
 	"path"
-	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/tacusci/clover/utils"
 )
 
 //RunSdc to run the storage device checker tool
@@ -55,9 +54,7 @@ func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 	for {
 		if totalWrittenBytes <= size-byteChunkSize {
 			filename := path.Join(location, "cloverdata"+strconv.Itoa(fileCount)+".bin")
-			if runtime.GOOS == "windows" {
-				filename = strings.Replace(filename, ":/", ":\\", -1)
-			}
+			filename = utils.TranslatePath(filename)
 			file, err := os.Create(filename)
 			check(err)
 			defer file.Close()

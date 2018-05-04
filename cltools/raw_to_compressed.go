@@ -6,7 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"strings"
+
+	"github.com/tacusci/clover/utils"
 )
 
 type endian int
@@ -40,43 +43,70 @@ func RunRtc(locationpath string, intputType string, outputType string) {
 		for i := range fileInfos {
 			fileInfo := fileInfos[i]
 			if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(intputType)) {
-				imageFile, err := os.Open(locationpath + "\\" + fileInfo.Name())
+				filename := path.Join(locationpath, fileInfo.Name())
+				filename = utils.TranslatePath(filename)
+				imageFile, err := os.Open(filename)
 				if err != nil {
 					log.Fatal(err)
 					return
 				}
 				defer imageFile.Close()
-				parseAllImageMeta(imageFile)
+				err = parseAllImageMeta(imageFile)
+
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
 			}
 		}
 	}
 }
 
-func parseAllImageMeta(file *os.File) {
-	readHeader(file)
+func parseAllImageMeta(file *os.File) error {
+	header, err := readHeader(file)
+	imageTiffHeaderData := *new(tiffHeaderData)
+
+	if err != nil {
+		//return here before the next read + check because we always want the root cause error to bubble back up
+		return err
+	}
+
+	imageTiffHeaderData, err = getTiffData(header)
+
+	readIfd(file, imageTiffHeaderData.tiffOffset)
+
+	return nil
 }
 
-func readHeader(file *os.File) {
+func readIfd(file *os.File, ifdOffset uint32) []byte {
+	ifdTagCountBytes := make([]byte, 2)
+	file.Seek(0, 0)
+	file.Seek(int64(ifdOffset), os.SEEK_CUR)
+	file.Read(ifdTagCountBytes)
+
+	var ifdTagCount uint16
+	ifdTagCount |= uint16(ifdTagCountBytes[0]) << 8
+	ifdTagCount |= uint16(ifdTagCountBytes[1])
+
+	//each IFD tag length is 12 bytes
+	ifdData := make([]byte, ifdTagCount*12)
+
+	return ifdData
+}
+
+func readHeader(file *os.File) ([]byte, error) {
 	header := make([]byte, 8)
 	file.Seek(0, 0)
 	bytesRead, err := file.Read(header)
 
 	if bytesRead < 8 {
-		log.Fatal("Unable to read enough bytes for the header...")
-		return
+		return header, errors.New("Unable to read full header")
 	}
 
 	if err != nil {
-		log.Fatal(err)
-		return
+		return header, err
 	}
-
-	_, err = getTiffData(header)
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	return header, nil
 }
 
 func getEdianOrder(header []byte) endian {
@@ -94,7 +124,7 @@ func getEdianOrder(header []byte) endian {
 	return bigEndian
 }
 
-func getTiffData(header []byte) (*tiffHeaderData, error) {
+func getTiffData(header []byte) (tiffHeaderData, error) {
 	endianOrder := getEdianOrder(header)
 	tiffData := new(tiffHeaderData)
 	if len(header) >= 8 {
@@ -119,9 +149,9 @@ func getTiffData(header []byte) (*tiffHeaderData, error) {
 
 		tiffData.tiffOffset = tiffOffset
 	} else {
-		return tiffData, errors.New("Header incorrect length")
+		return *tiffData, errors.New("Header incorrect length")
 	}
-	return tiffData, nil
+	return *tiffData, nil
 }
 
 func isDirectory(path string) (bool, error) {
