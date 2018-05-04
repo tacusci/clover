@@ -73,20 +73,25 @@ func parseAllImageMeta(file *os.File) error {
 
 	imageTiffHeaderData, err = getTiffData(header)
 
-	readIfd(file, imageTiffHeaderData.tiffOffset)
+	readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
 	return nil
 }
 
-func readIfd(file *os.File, ifdOffset uint32) []byte {
+func readIfd(file *os.File, ifdOffset uint32, endianOrder endian) []byte {
 	ifdTagCountBytes := make([]byte, 2)
 	file.Seek(0, 0)
 	file.Seek(int64(ifdOffset), os.SEEK_CUR)
 	file.Read(ifdTagCountBytes)
 
 	var ifdTagCount uint16
-	ifdTagCount |= uint16(ifdTagCountBytes[0]) << 8
-	ifdTagCount |= uint16(ifdTagCountBytes[1])
+	if endianOrder == bigEndian {
+		ifdTagCount |= uint16(ifdTagCountBytes[0]) << 8
+		ifdTagCount |= uint16(ifdTagCountBytes[1])
+	} else if endianOrder == littleEndian {
+		ifdTagCount |= uint16(ifdTagCountBytes[1]) << 8
+		ifdTagCount |= uint16(ifdTagCountBytes[0])
+	}
 
 	//each IFD tag length is 12 bytes
 	ifdData := make([]byte, ifdTagCount*12)
