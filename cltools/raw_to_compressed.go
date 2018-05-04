@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+type endian int
+
+const (
+	bigEndian    endian = 0
+	littleEndian endian = 1
+)
+
 //RunRtc runs the raw to compressed image conversion tool
 func RunRtc(locationpath string, intputType string, outputType string) {
 	if len(locationpath) == 0 || len(intputType) == 0 || len(outputType) == 0 {
@@ -47,7 +54,7 @@ func readHeader(file *os.File) {
 	file.Seek(0, 0)
 	bytesRead, err := file.Read(header)
 
-	if bytesRead < 7 {
+	if bytesRead < 8 {
 		log.Fatal("Unable to read enough bytes for the header...")
 		return
 	}
@@ -57,13 +64,36 @@ func readHeader(file *os.File) {
 		return
 	}
 
-	println(isTiffImage(header))
+	if isTiffImage(header, getEdianOrder(header)) {
+		log.Println("Image confirmed to be TIFF")
+	} else {
+		log.Fatal("Image not of type TIFF")
+		return
+	}
 }
 
-func isTiffImage(header []byte) bool {
+func getEdianOrder(header []byte) endian {
 	if len(header) >= 4 {
-		var magicNum uint8
-		magicNum |= uint8(header[2]) | uint8(header[3])
+		var endianFlag uint16
+		endianFlag |= uint16(header[0]) << 8
+		endianFlag |= uint16(header[1])
+		if endianFlag == 19789 {
+			return bigEndian
+		} else if endianFlag == 18761 {
+			return littleEndian
+		}
+	}
+	return bigEndian
+}
+
+func isTiffImage(header []byte, endianOrder endian) bool {
+	if len(header) >= 4 {
+		var magicNum uint16
+		if endianOrder == bigEndian {
+			magicNum |= uint16(header[2]) | uint16(header[3])
+		} else {
+			magicNum |= uint16(header[3]) | uint16(header[2])
+		}
 
 		//a TIFF image's magic number is 42
 		if magicNum == 42 {
