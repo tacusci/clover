@@ -31,10 +31,9 @@ func RunRtc(locationpath string, intputType string, outputType string) {
 				if err != nil {
 					log.Fatal(err)
 					return
-				} else {
-					defer imageFile.Close()
-					parseAllImageMeta(imageFile)
 				}
+				defer imageFile.Close()
+				parseAllImageMeta(imageFile)
 			}
 		}
 	}
