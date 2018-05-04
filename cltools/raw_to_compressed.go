@@ -17,28 +17,45 @@ func RunRtc(locationpath string, intputType string, outputType string) {
 	}
 
 	if isDir, _ := isDirectory(locationpath); isDir {
-		println("It is a directory")
 		fileInfos, err := ioutil.ReadDir(locationpath)
 
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			for i := range fileInfos {
-				fileInfo := fileInfos[i]
-				if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(intputType)) {
-					imageFile, err := ioutil.ReadFile(locationpath + "\\" + fileInfo.Name())
-					if err != nil {
-						log.Fatal(err)
-					} else {
-						for i := 0; i < 8; i++ {
-							fmt.Printf("%b", imageFile[i])
-						}
-					}
+			return
+		}
+
+		for i := range fileInfos {
+			fileInfo := fileInfos[i]
+			if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(intputType)) {
+				imageFile, err := os.Open(locationpath + "\\" + fileInfo.Name())
+				if err != nil {
+					log.Fatal(err)
+					return
+				} else {
+					defer imageFile.Close()
+					parseAllImageMeta(imageFile)
 				}
 			}
 		}
-	} else {
-		println("It is not a directory")
+	}
+}
+
+func parseAllImageMeta(file *os.File) {
+	readHeader(file)
+}
+
+func readHeader(file *os.File) {
+	header := make([]byte, 8)
+	file.Seek(0, 0)
+	bytesRead, err := file.Read(header)
+
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	for i := 0; i < bytesRead; i++ {
+		fmt.Printf("%b", header[i])
 	}
 }
 
