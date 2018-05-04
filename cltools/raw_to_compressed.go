@@ -2,7 +2,6 @@ package cltools
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -48,14 +47,30 @@ func readHeader(file *os.File) {
 	file.Seek(0, 0)
 	bytesRead, err := file.Read(header)
 
+	if bytesRead < 7 {
+		log.Fatal("Unable to read enough bytes for the header...")
+		return
+	}
+
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	for i := 0; i < bytesRead; i++ {
-		fmt.Printf("%b", header[i])
+	println(isTiffImage(header))
+}
+
+func isTiffImage(header []byte) bool {
+	if len(header) >= 4 {
+		var magicNum uint8
+		magicNum |= uint8(header[2]) | uint8(header[3])
+
+		//a TIFF image's magic number is 42
+		if magicNum == 42 {
+			return true
+		}
 	}
+	return false
 }
 
 func isDirectory(path string) (bool, error) {
