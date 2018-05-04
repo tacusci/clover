@@ -1,6 +1,7 @@
 package cltools
 
 import (
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,12 @@ const (
 	bigEndian    endian = 0
 	littleEndian endian = 1
 )
+
+type tiffHeaderData struct {
+	endianOrder endian
+	magicNum    uint16
+	tiff0Offset uint32
+}
 
 //RunRtc runs the raw to compressed image conversion tool
 func RunRtc(locationpath string, intputType string, outputType string) {
@@ -64,10 +71,10 @@ func readHeader(file *os.File) {
 		return
 	}
 
-	if isTiffImage(header, getEdianOrder(header)) {
-		log.Println("Image confirmed to be TIFF")
-	} else {
-		log.Fatal("Image not of type TIFF")
+	_, err = getTiffData(header)
+
+	if err != nil {
+		log.Fatal(err)
 		return
 	}
 }
@@ -87,8 +94,11 @@ func getEdianOrder(header []byte) endian {
 	return bigEndian
 }
 
-func isTiffImage(header []byte, endianOrder endian) bool {
-	if len(header) >= 4 {
+func getTiffData(header []byte) (*tiffHeaderData, error) {
+	endianOrder := getEdianOrder(header)
+	tiffData := new(tiffHeaderData)
+	if len(header) >= 8 {
+
 		var magicNum uint16
 		if endianOrder == bigEndian {
 			magicNum |= uint16(header[2]) | uint16(header[3])
@@ -96,12 +106,22 @@ func isTiffImage(header []byte, endianOrder endian) bool {
 			magicNum |= uint16(header[3]) | uint16(header[2])
 		}
 
-		//a TIFF image's magic number is 42
-		if magicNum == 42 {
-			return true
+		tiffData.magicNum = magicNum
+		tiffData.endianOrder = endianOrder
+
+		var tiff0Offset uint32
+		if tiffData.endianOrder == bigEndian {
+			tiff0Offset |= uint32(header[4]) << 24
+			tiff0Offset |= uint32(header[5]) << 16
+			tiff0Offset |= uint32(header[6]) << 8
+			tiff0Offset |= uint32(header[7])
 		}
+
+		tiffData.tiff0Offset = tiff0Offset
+	} else {
+		return tiffData, errors.New("Header incorrect length")
 	}
-	return false
+	return tiffData, nil
 }
 
 func isDirectory(path string) (bool, error) {
