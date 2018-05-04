@@ -75,6 +75,7 @@ func readHeader(file *os.File) {
 func getEdianOrder(header []byte) endian {
 	if len(header) >= 4 {
 		var endianFlag uint16
+		//add the bits to the 2 byte int and shove them to the left to make room for the other bits
 		endianFlag |= uint16(header[0]) << 8
 		endianFlag |= uint16(header[1])
 		if endianFlag == 19789 {
