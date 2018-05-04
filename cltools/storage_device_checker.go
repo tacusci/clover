@@ -1,19 +1,21 @@
 package cltools
 
 import (
-	"time"
-	"github.com/fatih/color"
-	"path"
-	"strconv"
-	"runtime"
-	"strings"
-	"os"
 	"bufio"
-	"math/rand"
 	"crypto/md5"
 	"flag"
+	"math/rand"
+	"os"
+	"path"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/fatih/color"
 )
 
+//RunSdc to run the storage device checker tool
 func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, dontDeleteFiles bool) {
 	if len(locationPath) == 0 {
 		flag.PrintDefaults()
@@ -29,7 +31,7 @@ func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, d
 
 		var passed = false
 
-		if (!skipFileIntegrityCheck) {
+		if !skipFileIntegrityCheck {
 			passed = verify(fileCount, locationPath)
 		}
 		tidy(dontDeleteFiles, fileCount, locationPath)
@@ -39,9 +41,9 @@ func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, d
 
 func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 	//bytes in 1MB
-	var byteChunkSize int = 1024 * 1000
-	var totalWrittenBytes int = 0
-	var fileCount int = 1
+	var byteChunkSize = 1024 * 1000
+	var totalWrittenBytes int
+	var fileCount = 1
 
 	startTime := time.Now()
 
@@ -61,7 +63,7 @@ func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 			defer file.Close()
 			bufferedWriter := bufio.NewWriter(file)
 			rand.Seed(int64(fileCount))
-			bytesToWrite := make([]byte, 1024 * 1000)
+			bytesToWrite := make([]byte, 1024*1000)
 			for i := len(bytesToWrite) / 2; i < len(bytesToWrite); i++ {
 				bytesToWrite[i] = byte(rand.Intn(254))
 			}
@@ -90,17 +92,22 @@ func verify(fileCount int, location string) bool {
 
 	for i := 1; i < fileCount; i++ {
 		file, err := os.Open(path.Join(location, "cloverdata"+strconv.Itoa(i)+".bin"))
-		if (err != nil) { rColor.Println("Unable to open "+file.Name()+" for verification..."); break }
+		if err != nil {
+			rColor.Println("Unable to open " + file.Name() + " for verification...")
+			break
+		}
 		defer file.Close()
 		checksumBytes := make([]byte, 16)
 		_, err = file.Seek(0, 0)
 		check(err)
 		_, err = file.Read(checksumBytes)
 		check(err)
-		fullFileBytes := make([]byte, 1024 * 1000)
+		fullFileBytes := make([]byte, 1024*1000)
 		file.Seek(0, 0)
 		file.Read(fullFileBytes)
-		for i := 0; i < 17; i++ { fullFileBytes[i] = 0 }
+		for i := 0; i < 17; i++ {
+			fullFileBytes[i] = 0
+		}
 		checksumFromFileContents := md5.Sum(fullFileBytes)
 		//if checksumFromFileContents[:] != fullFileBytes[:] {
 		if compareHashBytes(checksumFromFileContents[:], fullFileBytes[:]) {
@@ -123,8 +130,12 @@ func outputSummary(sizeToWrite int, totalWrittenBytes int, location string, veri
 
 	yColor.Printf("Managed to write %v/%v (%v%%) bytes to %v\n", totalWrittenBytes, sizeToWrite, writtenPercentage, location)
 
-	if (!skipFileIntegrityCheck) {
-		if (verificationPassed) { gColor.Println("File Integrity -> PASSED...") } else { rColor.Println("File Integrity -> FAILED...") }
+	if !skipFileIntegrityCheck {
+		if verificationPassed {
+			gColor.Println("File Integrity -> PASSED...")
+		} else {
+			rColor.Println("File Integrity -> FAILED...")
+		}
 	} else {
 		yColor.Printf("File Integrity -> SKIPPED")
 	}
@@ -143,9 +154,13 @@ func tidy(dontDeleteFiles bool, fileCount int, location string) {
 }
 
 func compareHashBytes(hashBytes1 []byte, hashBytes2 []byte) bool {
-	if len(hashBytes1) != len(hashBytes2) { return false }
+	if len(hashBytes1) != len(hashBytes2) {
+		return false
+	}
 	for i := range hashBytes1 {
-		if (hashBytes1[i] != hashBytes2[i]) { return false }
+		if hashBytes1[i] != hashBytes2[i] {
+			return false
+		}
 	}
 	return true
 }
