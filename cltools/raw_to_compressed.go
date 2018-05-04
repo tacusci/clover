@@ -3,6 +3,7 @@ package cltools
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -73,15 +74,18 @@ func parseAllImageMeta(file *os.File) error {
 
 	imageTiffHeaderData, err = getTiffData(header)
 
-	readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
+	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
+
+	for i := range ifd0Data {
+		fmt.Printf("%#x ", ifd0Data[i])
+	}
 
 	return nil
 }
 
 func readIfd(file *os.File, ifdOffset uint32, endianOrder endian) []byte {
 	ifdTagCountBytes := make([]byte, 2)
-	file.Seek(0, 0)
-	file.Seek(int64(ifdOffset), os.SEEK_CUR)
+	file.Seek(int64(ifdOffset), os.SEEK_SET)
 	file.Read(ifdTagCountBytes)
 
 	var ifdTagCount uint16
@@ -95,6 +99,8 @@ func readIfd(file *os.File, ifdOffset uint32, endianOrder endian) []byte {
 
 	//each IFD tag length is 12 bytes
 	ifdData := make([]byte, ifdTagCount*12)
+	file.Seek(int64(ifdOffset+2), os.SEEK_SET)
+	file.Read(ifdData)
 
 	return ifdData
 }
