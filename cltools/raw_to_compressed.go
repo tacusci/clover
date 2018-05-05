@@ -20,9 +20,10 @@ const (
 	littleEndian endian = 1
 )
 
+//EXIF tag values
 const (
-	subfileTypeTag               uint16 = 0xfe
-	oldSubfileTypeTag            uint16 = 0xff
+	subfileTypeTag               uint16 = 0x00fe
+	oldSubfileTypeTag            uint16 = 0x00ff
 	imageWidthTag                uint16 = 0x0100
 	imageHeightTag               uint16 = 0x0101
 	bitsPerSampleTag             uint16 = 0x0102
@@ -41,6 +42,80 @@ const (
 	samplesPerPixelTag           uint16 = 0x0115
 	rowsPerStripTag              uint16 = 0x0116
 	stripByteCountsTag           uint16 = 0x0117
+	minSampleValueTag            uint16 = 0x0118
+	maxSampleValueTag            uint16 = 0x0119
+	xResolutionTag               uint16 = 0x011a
+	yResolutionTag               uint16 = 0x011b
+	planarConfigurationTag       uint16 = 0x011c
+	pageNameTag                  uint16 = 0x011d
+	xPositionTag                 uint16 = 0x011e
+	yPositionTag                 uint16 = 0x011f
+	freeOffsetsTag               uint16 = 0x0120
+	freeByteCountsTag            uint16 = 0x0121
+	grayResponseUnitTag          uint16 = 0x0122
+	grayResponseCurveTag         uint16 = 0x0123
+	t4OptionsTag                 uint16 = 0x0124
+	t6OptionsTag                 uint16 = 0x0125
+	resolutionUnitTag            uint16 = 0x0128
+	pageNumberTag                uint16 = 0x0129
+	colorResponseUnitTag         uint16 = 0x012c
+	transferFunctionTag          uint16 = 0x012d
+	softwareTag                  uint16 = 0x0131
+	modifyDateTag                uint16 = 0x0132
+	artistTag                    uint16 = 0x013b
+	hostComputerTag              uint16 = 0x013c
+	predictorTag                 uint16 = 0x013d
+	whitePointTag                uint16 = 0x013e
+	primaryChromaticitiesTag     uint16 = 0x013f
+	colorMapTag                  uint16 = 0x0140
+	halftoneHintsTag             uint16 = 0x0141
+	tileWidthTag                 uint16 = 0x0142
+	tileLengthTag                uint16 = 0x0143
+	tileOffsetsTag               uint16 = 0x0144
+	tileByteCountsTag            uint16 = 0x0145
+	badFaxLinesTag               uint16 = 0x0146
+	cleanFaxDataTag              uint16 = 0x0147
+	consecutiveBadFaxLinesTag    uint16 = 0x0148
+	subIFDA100DataOffsetTag      uint16 = 0x014a
+	inkSetTag                    uint16 = 0x014c
+	inkNamesTag                  uint16 = 0x014d
+	numberOfInksTag              uint16 = 0x014e
+	dotRangeTag                  uint16 = 0x0150
+	targetPrinterTag             uint16 = 0x0151
+	extraSamplesTag              uint16 = 0x0152
+	sampleFormatTag              uint16 = 0x0153
+	sMinSampleValueTag           uint16 = 0x0154
+	sMaxSampleValueTag           uint16 = 0x0155
+	transferRangeTag             uint16 = 0x0156
+	clipPathTag                  uint16 = 0x0157
+	xClipPathUnitsTag            uint16 = 0x0158
+	yClipPathUnitsTag            uint16 = 0x0159
+	indexedTag                   uint16 = 0x015a
+	jpegTablesTag                uint16 = 0x015b
+	opiproxyTag                  uint16 = 0x015f
+	globalParametersIFDTag       uint16 = 0x0190
+	profileTypeTag               uint16 = 0x0191
+	faxProfileTag                uint16 = 0x0192
+	codingMethodsTag             uint16 = 0x0193
+	versionYearTag               uint16 = 0x0194
+	modeNumberTag                uint16 = 0x0195
+	decodeTag                    uint16 = 0x01b1
+	defaultImageColorTag         uint16 = 0x01b2
+	t82OptionsTag                uint16 = 0x01b3
+	jpegTables2Tag               uint16 = 0x01b5
+	jpegProcTag                  uint16 = 0x0200
+	thumbnailOffsetTag           uint16 = 0x0201
+	previewImageStartTag         uint16 = 0x0201
+	jpegFromRawStartTag          uint16 = 0x0201
+	otherImageStartTag           uint16 = 0x0201
+	thumbnailLengthTag           uint16 = 0x0202
+	previewImageLengthTag        uint16 = 0x0202
+	jpegFromRawLengthTag         uint16 = 0x0202
+	otherImageLengthTag          uint16 = 0x0202
+	jpegRestartIntervalTag       uint16 = 0x0203
+	jpegLosslessPredictorsTag    uint16 = 0x0205
+	jpegPointTransformsTag       uint16 = 0x0206
+	jpegQTablesTag               uint16 = 0x0207
 )
 
 type tiffHeaderData struct {
