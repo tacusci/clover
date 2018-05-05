@@ -20,6 +20,29 @@ const (
 	littleEndian endian = 1
 )
 
+const (
+	subfileTypeTag               uint16 = 0xfe
+	oldSubfileTypeTag            uint16 = 0xff
+	imageWidthTag                uint16 = 0x0100
+	imageHeightTag               uint16 = 0x0101
+	bitsPerSampleTag             uint16 = 0x0102
+	compressionTag               uint16 = 0x0103
+	photoMetricInterpretationTag uint16 = 0x0106
+	thresholdingTag              uint16 = 0x0107
+	cellWidthTag                 uint16 = 0x0108
+	cellLengthTag                uint16 = 0x0109
+	fillOrderTag                 uint16 = 0x010a
+	documentNameTag              uint16 = 0x010d
+	imageDescriptionTag          uint16 = 0x010e
+	makeTag                      uint16 = 0x010f
+	modelTag                     uint16 = 0x0110
+	stripOffsetsTag              uint16 = 0x0111
+	orientationTag               uint16 = 0x0112
+	samplesPerPixelTag           uint16 = 0x0115
+	rowsPerStripTag              uint16 = 0x0116
+	stripByteCountsTag           uint16 = 0x0117
+)
+
 type tiffHeaderData struct {
 	endianOrder endian
 	magicNum    uint16
@@ -72,7 +95,7 @@ func parseAllImageMeta(file *os.File) error {
 		return err
 	}
 
-	imageTiffHeaderData, err = getTiffData(header)
+	imageTiffHeaderData, err = getTiffHeader(header)
 
 	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
@@ -135,20 +158,20 @@ func getEdianOrder(header []byte) endian {
 	return bigEndian
 }
 
-func getTiffData(header []byte) (tiffHeaderData, error) {
-	endianOrder := getEdianOrder(header)
+func getTiffHeader(header []byte) (tiffHeaderData, error) {
 	tiffData := new(tiffHeaderData)
+	tiffData.endianOrder = getEdianOrder(header)
+
 	if len(header) >= 8 {
 
 		var magicNum uint16
-		if endianOrder == bigEndian {
+		if tiffData.endianOrder == bigEndian {
 			magicNum |= uint16(header[2]) | uint16(header[3])
-		} else {
+		} else if tiffData.endianOrder == littleEndian {
 			magicNum |= uint16(header[3]) | uint16(header[2])
 		}
 
 		tiffData.magicNum = magicNum
-		tiffData.endianOrder = endianOrder
 
 		var tiffOffset uint32
 		if tiffData.endianOrder == bigEndian {
