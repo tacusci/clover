@@ -93,8 +93,8 @@ func readIfd(file *os.File, ifdOffset uint32, endianOrder endian) []byte {
 		ifdTagCount |= uint16(ifdTagCountBytes[0]) << 8
 		ifdTagCount |= uint16(ifdTagCountBytes[1])
 	} else if endianOrder == littleEndian {
-		ifdTagCount |= uint16(ifdTagCountBytes[1]) << 8
 		ifdTagCount |= uint16(ifdTagCountBytes[0])
+		ifdTagCount |= uint16(ifdTagCountBytes[1]) << 8
 	}
 
 	//each IFD tag length is 12 bytes
@@ -156,6 +156,11 @@ func getTiffData(header []byte) (tiffHeaderData, error) {
 			tiffOffset |= uint32(header[5]) << 16
 			tiffOffset |= uint32(header[6]) << 8
 			tiffOffset |= uint32(header[7])
+		} else if tiffData.endianOrder == littleEndian {
+			tiffOffset |= uint32(header[4])
+			tiffOffset |= uint32(header[5]) << 8
+			tiffOffset |= uint32(header[6]) << 16
+			tiffOffset |= uint32(header[7]) << 24
 		}
 
 		tiffData.tiffOffset = tiffOffset
