@@ -373,6 +373,30 @@ const (
 	imageSourceDataTag               uint16 = 0x935c
 	ambientTempratureTag             uint16 = 0x9400
 	humidityTag                      uint16 = 0x9401
+	pressureTag                      uint16 = 0x9402
+	waterDepthTag                    uint16 = 0x9403
+	accelerationTag                  uint16 = 0x9404
+	cameraElevationAngleTag          uint16 = 0x9405
+	xpTitleTag                       uint16 = 0x9c9b
+	xpCommentTag                     uint16 = 0x9c9c
+	xpAuthorTag                      uint16 = 0x9c9d
+	xpKeywordsTag                    uint16 = 0x9c9e
+	xpSubjectTag                     uint16 = 0x9c9f
+	flashpixVersionTag               uint16 = 0xa000
+	colorSpaceTag                    uint16 = 0xa001
+	exifImageWidthTag                uint16 = 0xa002
+	exifImageHeightTag               uint16 = 0xa003
+	relatedSoundFileTag              uint16 = 0xa004
+	interopOffsetTag                 uint16 = 0xa005
+	samsungRawPointersOffsetTag      uint16 = 0xa010
+	samsungRawPointersLengthTag      uint16 = 0xa011
+	samsungRawByteOrderTag           uint16 = 0xa101
+	samsungRawUnknownTag             uint16 = 0xa102
+	flashEnergy2Tag                  uint16 = 0xa20b
+	spatialFrequencyResponse2Tag     uint16 = 0xa20c
+	noise2Tag                        uint16 = 0xa20d
+	focalPlaneXResolution2Tag        uint16 = 0xa20e
+	focalPlaneYResolution2Tag        uint16 = 0xa20f
 )
 
 type tiffHeaderData struct {
