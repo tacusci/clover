@@ -208,6 +208,9 @@ const (
 	cmykEquivalentTag                uint16 = 0x84f0
 	semInfoTag                       uint16 = 0x8546
 	afcpIPTCTag                      uint16 = 0x8568
+	pixelMagicJBigOptionsTag         uint16 = 0x85b8
+	jplCartoIFDTag                   uint16 = 0x85d7
+	modelTransformTag                uint16 = 0x85d8
 )
 
 type tiffHeaderData struct {
