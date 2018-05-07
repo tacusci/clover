@@ -684,9 +684,9 @@ func getEdianOrder(header []byte) endian {
 		//add the bits to the 2 byte int and shove them to the left to make room for the other bits
 		endianFlag |= uint16(header[0]) << 8
 		endianFlag |= uint16(header[1])
-		if endianFlag == 19789 {
+		if endianFlag == 0x4d4d {
 			return bigEndian
-		} else if endianFlag == 18761 {
+		} else if endianFlag == 0x4949 {
 			return littleEndian
 		}
 	}
