@@ -590,40 +590,55 @@ type tiffHeaderData struct {
 }
 
 //RunRtc runs the raw to compressed image conversion tool
-func RunRtc(locationpath string, intputType string, outputType string) {
-	if len(locationpath) == 0 || len(intputType) == 0 || len(outputType) == 0 {
+func RunRtc(locationpath string, outputDirectory string, inputType string, outputType string, recursive bool) {
+	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
 	if isDir, _ := isDirectory(locationpath); isDir {
-		fileInfos, err := ioutil.ReadDir(locationpath)
+		var imagesFoundCount int
+		imagesFoundCount = readAllImagesInDir(imagesFoundCount, locationpath, outputDirectory, inputType, outputType, recursive)
+		log.Printf("Finished running... Found %d images\n", imagesFoundCount)
+	}
+}
 
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
+func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirectory string, inputType string, outputType string, recursive bool) int {
 
-		for i := range fileInfos {
-			fileInfo := fileInfos[i]
-			if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(intputType)) {
-				filename := path.Join(locationpath, fileInfo.Name())
-				filename = utils.TranslatePath(filename)
-				imageFile, err := os.Open(filename)
-				if err != nil {
-					log.Fatal(err)
-					return
-				}
-				defer imageFile.Close()
-				err = parseAllImageMeta(imageFile)
+	fileInfos, err := ioutil.ReadDir(locationpath)
 
-				if err != nil {
-					log.Fatal(err)
-					return
-				}
+	if err != nil {
+		log.Fatal(err)
+		return imagesFoundCount
+	}
+
+	for i := range fileInfos {
+		fileInfo := fileInfos[i]
+		if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(inputType)) {
+			filename := path.Join(locationpath, fileInfo.Name())
+			filename = utils.TranslatePath(filename)
+			imageFile, err := os.Open(filename)
+
+			if err != nil {
+				log.Fatal(err)
+				return imagesFoundCount
 			}
+
+			err = parseAllImageMeta(imageFile)
+
+			imagesFoundCount++
+
+			imageFile.Close()
+
+			if err != nil {
+				log.Fatal(err)
+				return imagesFoundCount
+			}
+		} else if recursive && fileInfo.IsDir() {
+			imagesFoundCount = readAllImagesInDir(imagesFoundCount, utils.TranslatePath(path.Join(locationpath, fileInfo.Name())), outputDirectory, inputType, outputType, recursive)
 		}
 	}
+	return imagesFoundCount
 }
 
 func parseAllImageMeta(file *os.File) error {

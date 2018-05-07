@@ -44,15 +44,17 @@ func runTool(toolFlag string) {
 
 	} else if toolFlag == "/rtc" {
 		sourceDirectory := flag.String("source-directory", "", "Location containing raw images to convert.")
+		outputDirectory := flag.String("output-directory", "", "Location to save compressed images.")
 		inputType := flag.String("input-type", "", "Extension of image type to convert.")
 		outputType := flag.String("output-type", "", "Extension of image type to output to.")
+		recursive := flag.Bool("recursive-search", false, "Scan all sub folders in root recursively.")
 
 		//kind of hack to force flag parser to find tool argument flags correctly
 		os.Args = os.Args[1:]
 
 		flag.Parse()
 
-		cltools.RunRtc(*sourceDirectory, *inputType, *outputType)
+		cltools.RunRtc(*sourceDirectory, *outputDirectory, *inputType, *outputType, *recursive)
 	} else {
 		outputUsageAndClose()
 	}
