@@ -13,13 +13,6 @@ import (
 	"github.com/tacusci/clover/utils"
 )
 
-type endian int
-
-const (
-	bigEndian    endian = 0
-	littleEndian endian = 1
-)
-
 //EXIF tag values
 const (
 	subfileTypeTag                   uint16 = 0x00fe
@@ -579,7 +572,7 @@ const (
 )
 
 type tiffHeaderData struct {
-	endianOrder endian
+	endianOrder utils.EndianOrder
 	magicNum    uint16
 	tiffOffset  uint32
 }
@@ -635,25 +628,26 @@ func parseAllImageMeta(file *os.File) error {
 	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
 	for i := range ifd0Data {
-		fmt.Printf("%#x ", ifd0Data[i])
-	}
+		if i+12 < len(ifd0Data) {
+			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
+			//tagType := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
 
+			if tagAsInt == modelTag || tagAsInt == model2Tag {
+				fmt.Printf("Model tag found at %d/%d\n", i, len(ifd0Data))
+			} else if tagAsInt == gpsInfoTag {
+				fmt.Printf("GPS info tag found at %d/%d\n", i, len(ifd0Data))
+			}
+		}
+	}
 	return nil
 }
 
-func readIfd(file *os.File, ifdOffset uint32, endianOrder endian) []byte {
+func readIfd(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
 	ifdTagCountBytes := make([]byte, 2)
 	file.Seek(int64(ifdOffset), os.SEEK_SET)
 	file.Read(ifdTagCountBytes)
 
-	var ifdTagCount uint16
-	if endianOrder == bigEndian {
-		ifdTagCount |= uint16(ifdTagCountBytes[0]) << 8
-		ifdTagCount |= uint16(ifdTagCountBytes[1])
-	} else if endianOrder == littleEndian {
-		ifdTagCount |= uint16(ifdTagCountBytes[0])
-		ifdTagCount |= uint16(ifdTagCountBytes[1]) << 8
-	}
+	ifdTagCount := utils.ConvertBytesToUInt16(ifdTagCountBytes[0], ifdTagCountBytes[1], endianOrder)
 
 	//each IFD tag length is 12 bytes
 	ifdData := make([]byte, ifdTagCount*12)
@@ -678,19 +672,19 @@ func readHeader(file *os.File) ([]byte, error) {
 	return header, nil
 }
 
-func getEdianOrder(header []byte) endian {
+func getEdianOrder(header []byte) utils.EndianOrder {
 	if len(header) >= 4 {
 		var endianFlag uint16
 		//add the bits to the 2 byte int and shove them to the left to make room for the other bits
 		endianFlag |= uint16(header[0]) << 8
 		endianFlag |= uint16(header[1])
 		if endianFlag == 0x4d4d {
-			return bigEndian
+			return utils.BigEndian
 		} else if endianFlag == 0x4949 {
-			return littleEndian
+			return utils.LittleEndian
 		}
 	}
-	return bigEndian
+	return utils.BigEndian
 }
 
 func getTiffHeader(header []byte) (tiffHeaderData, error) {
@@ -700,28 +694,14 @@ func getTiffHeader(header []byte) (tiffHeaderData, error) {
 	if len(header) >= 8 {
 
 		var magicNum uint16
-		if tiffData.endianOrder == bigEndian {
+		if tiffData.endianOrder == utils.BigEndian {
 			magicNum |= uint16(header[2]) | uint16(header[3])
-		} else if tiffData.endianOrder == littleEndian {
+		} else if tiffData.endianOrder == utils.LittleEndian {
 			magicNum |= uint16(header[3]) | uint16(header[2])
 		}
 
 		tiffData.magicNum = magicNum
-
-		var tiffOffset uint32
-		if tiffData.endianOrder == bigEndian {
-			tiffOffset |= uint32(header[4]) << 24
-			tiffOffset |= uint32(header[5]) << 16
-			tiffOffset |= uint32(header[6]) << 8
-			tiffOffset |= uint32(header[7])
-		} else if tiffData.endianOrder == littleEndian {
-			tiffOffset |= uint32(header[4])
-			tiffOffset |= uint32(header[5]) << 8
-			tiffOffset |= uint32(header[6]) << 16
-			tiffOffset |= uint32(header[7]) << 24
-		}
-
-		tiffData.tiffOffset = tiffOffset
+		tiffData.tiffOffset = utils.ConvertBytesToUInt32(header[4], header[5], header[6], header[7], tiffData.endianOrder)
 	} else {
 		return *tiffData, errors.New("Header incorrect length")
 	}
