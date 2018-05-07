@@ -3,7 +3,6 @@ package cltools
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -569,6 +568,19 @@ const (
 	sharpness2Tag                    uint16 = 0xfe56
 	smoothnessTag                    uint16 = 0xfe57
 	moireFilterTag                   uint16 = 0xfe58
+
+	unsignedByteType     uint8 = 1  //is 1 byte in size
+	asciiStringsType     uint8 = 2  //ASCII strings, always a 1 byte long pointer
+	unsignedShortType    uint8 = 3  //is 2 bytes in size
+	unsignedLongType     uint8 = 4  //is 4 bytes in size
+	unsignedRationalType uint8 = 5  //is 8 bytes in size
+	signedByteType       uint8 = 6  //is 1 bytes in size
+	undefinedType        uint8 = 7  //is 1 byte in size?
+	signedShortType      uint8 = 8  //is 2 bytes in size
+	signedLongType       uint8 = 9  //is 4 bytes in size
+	signedRationalType   uint8 = 10 //is 8 bytes in size
+	singleFloatType      uint8 = 11 //is 4 bytes in size
+	doubleFloatType      uint8 = 12 //is 8 bytes in size
 )
 
 type tiffHeaderData struct {
@@ -629,13 +641,41 @@ func parseAllImageMeta(file *os.File) error {
 
 	for i := range ifd0Data {
 		if i+12 < len(ifd0Data) {
-			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
-			//tagType := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == modelTag || tagAsInt == model2Tag {
-				fmt.Printf("Model tag found at %d/%d\n", i, len(ifd0Data))
-			} else if tagAsInt == gpsInfoTag {
-				fmt.Printf("GPS info tag found at %d/%d\n", i, len(ifd0Data))
+			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
+			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
+			numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
+
+			if tagAsInt == dateTimeOriginalTag {
+				file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+				dateTimeData := make([]byte, numOfComponentsAsInt)
+				file.Read(dateTimeData)
+
+				dateTimeString := string(dateTimeData)
+
+				println("Found date/time -> " + dateTimeString)
+			} else if tagAsInt == modelTag {
+				//data stored is definately string data..
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					modelData := make([]byte, numOfComponentsAsInt)
+					file.Read(modelData)
+
+					modelString := string(modelData)
+
+					println("Found model -> " + modelString)
+				}
+			} else if tagAsInt == makeTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					makeData := make([]byte, numOfComponentsAsInt)
+					file.Read(makeData)
+
+					makeString := string(makeData)
+
+					println("Found make -> " + makeString)
+				}
 			}
 		}
 	}
