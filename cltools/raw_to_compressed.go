@@ -667,9 +667,9 @@ func parseAllImageMeta(file *os.File) error {
 				dateTimeData := make([]byte, numOfComponentsAsInt)
 				file.Read(dateTimeData)
 
-				//dateTimeString := string(dateTimeData)
+				dateTimeString := string(dateTimeData)
 
-				//println("Found date/time -> " + dateTimeString)
+				println("Found date/time -> " + dateTimeString)
 			} else if tagAsInt == modelTag {
 				//data stored is definately string data..
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -677,9 +677,9 @@ func parseAllImageMeta(file *os.File) error {
 					modelData := make([]byte, numOfComponentsAsInt)
 					file.Read(modelData)
 
-					//modelString := string(modelData)
+					modelString := string(modelData)
 
-					//println("Found model -> " + modelString)
+					println("Found model -> " + modelString)
 				}
 			} else if tagAsInt == makeTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -687,9 +687,9 @@ func parseAllImageMeta(file *os.File) error {
 					makeData := make([]byte, numOfComponentsAsInt)
 					file.Read(makeData)
 
-					//makeString := string(makeData)
+					makeString := string(makeData)
 
-					//println("Found make -> " + makeString)
+					println("Found make -> " + makeString)
 				}
 			}
 		}

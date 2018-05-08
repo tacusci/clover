@@ -29,14 +29,13 @@ func main() {
 }
 
 func runTool(toolFlag string) {
+	//kind of hack to force flag parser to find tool argument flags correctly
+	os.Args = os.Args[1:]
 	if toolFlag == "/sdc" {
 		locationPath := flag.String("location", "", "Location to write data to.")
 		sizeToWrite := flag.Int("size", 0, "Size of total data to write.")
 		skipFileIntegrityCheck := flag.Bool("skip-integrity-check", false, "Skip verifying output file integrity.")
 		dontDeleteFiles := flag.Bool("no-delete", false, "Don't delete outputted files.")
-
-		//kind of hack to force flag parser to find tool argument flags correctly
-		os.Args = os.Args[1:]
 
 		flag.Parse()
 
@@ -48,9 +47,6 @@ func runTool(toolFlag string) {
 		inputType := flag.String("input-type", "", "Extension of image type to convert.")
 		outputType := flag.String("output-type", "", "Extension of image type to output to.")
 		recursive := flag.Bool("recursive-search", false, "Scan all sub folders in root recursively.")
-
-		//kind of hack to force flag parser to find tool argument flags correctly
-		os.Args = os.Args[1:]
 
 		flag.Parse()
 
