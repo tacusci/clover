@@ -589,6 +589,12 @@ type tiffHeaderData struct {
 	tiffOffset  uint32
 }
 
+type exifImageData struct {
+	imageWidth      uint32
+	imageHeight     uint32
+	jpgFromRawStart uint32
+}
+
 //RunRtc runs the raw to compressed image conversion tool
 func RunRtc(locationpath string, outputDirectory string, inputType string, outputType string, recursive bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
@@ -626,7 +632,7 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 			}
 
 			log.Printf("Reading image %s", filename)
-			err = parseAllImageMeta(imageFile)
+			err = parseAllImageData(imageFile)
 
 			if err != nil {
 				log.Fatal(err)
@@ -642,7 +648,7 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 	return imagesFoundCount
 }
 
-func parseAllImageMeta(file *os.File) error {
+func parseAllImageData(file *os.File) error {
 	header, err := readHeader(file)
 	imageTiffHeaderData := *new(tiffHeaderData)
 
@@ -661,10 +667,14 @@ func parseAllImageMeta(file *os.File) error {
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
 			//dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
 			//numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
-			//dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
+			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == subfileTypeTag {
+			exifImageData := *new(exifImageData)
 
+			if tagAsInt == imageWidthTag || tagAsInt == imageWidth2Tag {
+				exifImageData.imageWidth = dataValueOrDataOffsetAsInt
+			} else if tagAsInt == imageHeightTag || tagAsInt == imageHeight2Tag {
+				exifImageData.imageHeight = dataValueOrDataOffsetAsInt
 			}
 		}
 	}
