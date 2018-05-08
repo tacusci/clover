@@ -42,7 +42,7 @@ func runTool(toolFlag string) {
 		cltools.RunSdc(*locationPath, *sizeToWrite, *skipFileIntegrityCheck, *dontDeleteFiles)
 
 	} else if toolFlag == "/rtc" {
-		sourceDirectory := flag.String("source-directory", "", "Location containing raw images to convert.")
+		sourceDirectory := flag.String("input-directory", "", "Location containing raw images to convert.")
 		outputDirectory := flag.String("output-directory", "", "Location to save compressed images.")
 		inputType := flag.String("input-type", "", "Extension of image type to convert.")
 		outputType := flag.String("output-type", "", "Extension of image type to output to.")
