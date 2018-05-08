@@ -624,16 +624,16 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 				return imagesFoundCount
 			}
 
+			log.Printf("Reading image %s", filename)
 			err = parseAllImageMeta(imageFile)
-
-			imagesFoundCount++
-
-			imageFile.Close()
 
 			if err != nil {
 				log.Fatal(err)
-				return imagesFoundCount
+				//return imagesFoundCount
 			}
+
+			imagesFoundCount++
+			imageFile.Close()
 		} else if recursive && fileInfo.IsDir() {
 			imagesFoundCount = readAllImagesInDir(imagesFoundCount, utils.TranslatePath(path.Join(locationpath, fileInfo.Name())), outputDirectory, inputType, outputType, recursive)
 		}
