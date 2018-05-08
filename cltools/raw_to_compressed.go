@@ -614,7 +614,8 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 
 	for i := range fileInfos {
 		fileInfo := fileInfos[i]
-		if !fileInfo.IsDir() && strings.Contains(strings.ToLower(fileInfo.Name()), strings.ToLower(inputType)) {
+
+		if !fileInfo.IsDir() && strings.HasSuffix(strings.ToLower(fileInfo.Name()), strings.ToLower(inputType)) {
 			filename := path.Join(locationpath, fileInfo.Name())
 			filename = utils.TranslatePath(filename)
 			imageFile, err := os.Open(filename)
@@ -658,39 +659,12 @@ func parseAllImageMeta(file *os.File) error {
 		if i+12 < len(ifd0Data) {
 
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
-			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
-			numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
-			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
+			//dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
+			//numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+			//dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == dateTimeOriginalTag {
-				file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
-				dateTimeData := make([]byte, numOfComponentsAsInt)
-				file.Read(dateTimeData)
+			if tagAsInt == subfileTypeTag {
 
-				dateTimeString := string(dateTimeData)
-
-				println("Found date/time -> " + dateTimeString)
-			} else if tagAsInt == modelTag {
-				//data stored is definately string data..
-				if uint8(dataFormatAsInt) == asciiStringsType {
-					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
-					modelData := make([]byte, numOfComponentsAsInt)
-					file.Read(modelData)
-
-					modelString := string(modelData)
-
-					println("Found model -> " + modelString)
-				}
-			} else if tagAsInt == makeTag {
-				if uint8(dataFormatAsInt) == asciiStringsType {
-					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
-					makeData := make([]byte, numOfComponentsAsInt)
-					file.Read(makeData)
-
-					makeString := string(makeData)
-
-					println("Found make -> " + makeString)
-				}
 			}
 		}
 	}
