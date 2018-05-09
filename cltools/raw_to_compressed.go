@@ -665,16 +665,14 @@ func parseAllImageData(file *os.File) error {
 		if i+12 < len(ifd0Data) {
 
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
-			//dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
+			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
 			//numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
-			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
+			//dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			exifImageData := *new(exifImageData)
-
-			if tagAsInt == imageWidthTag || tagAsInt == imageWidth2Tag {
-				exifImageData.imageWidth = dataValueOrDataOffsetAsInt
-			} else if tagAsInt == imageHeightTag || tagAsInt == imageHeight2Tag {
-				exifImageData.imageHeight = dataValueOrDataOffsetAsInt
+			if tagAsInt == subIFDA100DataOffsetTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					//numberOfOccurences := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+				}
 			}
 		}
 	}
