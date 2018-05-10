@@ -725,13 +725,17 @@ func parseAllImageData(file *os.File) error {
 				}
 			} else if tagAsInt == bitsPerSampleTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					bitsPerSampleValue := utils.ConvertBytesToUInt64(byte(0), byte(0), ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], ifd0Data[i+12], ifd0Data[i+13], imageTiffHeaderData.endianOrder)
-					fmt.Printf("Bits per sample -> %d\n", bitsPerSampleValue)
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					bitsPerSampleData := make([]byte, numOfElementsAsInt)
+					file.Read(bitsPerSampleData)
+					fmt.Printf("Bits per sample -> %d\n", bitsPerSampleData)
 				}
 			} else if tagAsInt == compressionTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					imageCompressionValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
-					fmt.Printf("Compression -> %d\n", imageCompressionValue)
+					if imageCompressionValue == compressionNone {
+						fmt.Printf("Compression -> None\n")
+					}
 				}
 			} else if tagAsInt == photometricInterpretationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
@@ -740,19 +744,19 @@ func parseAllImageData(file *os.File) error {
 						fmt.Printf("Photometric interpretation -> RGB\n")
 					}
 				}
-			} else if tagAsInt == modelTag {
-				if uint8(dataFormatAsInt) == asciiStringsType {
-					imageModelTagData := make([]byte, numOfElementsAsInt)
-					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
-					file.Read(imageModelTagData)
-					fmt.Printf("Camera model -> %s\n", string(imageModelTagData))
-				}
 			} else if tagAsInt == makeTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageMakeTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageMakeTagData)
 					fmt.Printf("Camera make -> %s\n", string(imageMakeTagData))
+				}
+			} else if tagAsInt == modelTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					imageModelTagData := make([]byte, numOfElementsAsInt)
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					file.Read(imageModelTagData)
+					fmt.Printf("Camera model -> %s\n", string(imageModelTagData))
 				}
 			}
 		}
