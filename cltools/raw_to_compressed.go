@@ -3,7 +3,6 @@ package cltools
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -583,11 +582,29 @@ const (
 	singleFloatType      uint8 = 11 //is 4 bytes in size
 	doubleFloatType      uint8 = 12 //is 8 bytes in size
 
-	photoMetricInterpretationWhiteIsZero      uint8 = 0
-	photoMetricInterpretationBlackIsZero      uint8 = 1
-	photoMetricInterpretationRGB              uint8 = 2
-	photoMetricInterpretationPaletteColor     uint8 = 3
-	photoMetricInterpretationTransparencyMask uint8 = 4
+	photometricInterpretationMinIsWhite       uint16 = 0
+	photometricInterpretationMinIsBlack       uint16 = 1
+	photometricInterpretationRGB              uint16 = 2
+	photometricInterpretationPaletteColor     uint16 = 3
+	photometricInterpretationTransparencyMask uint16 = 4
+	photometricInterpretationSeperated        uint16 = 5
+	photometricInterpretationYCBCR            uint16 = 6
+	photometricInterpretationCILAB            uint16 = 8
+	photometricInterpretationICCLAB           uint16 = 9
+	photometricInterpretationITULAB           uint16 = 10
+	photometricInterpretationLOGL             uint16 = 32844
+	photometricInterpretationLOGLUV           uint16 = 32845
+
+	compressionNone                uint16 = 1
+	compressionCCITTRLE            uint16 = 2
+	compressionCCITTFAX3           uint16 = 3
+	compressionCCITTFAX4           uint16 = 4
+	compressionLZW                 uint16 = 5
+	compressionOJPEG               uint16 = 6
+	compressionJPEG                uint16 = 7
+	compressionADOBEDEFLATE        uint16 = 8
+	compressionJBIGOnBlackAndWhite uint16 = 9
+	compressionJBIGOnColor         uint16 = 10
 )
 
 type tiffHeaderData struct {
@@ -667,26 +684,31 @@ func parseAllImageData(file *os.File) error {
 
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
 			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
-			numOfBytesAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
 			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == photometricInterpretationTag {
+			if tagAsInt == compressionTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					imageCompressionValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					println(imageCompressionValue)
+				}
+			} else if tagAsInt == photometricInterpretationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
-					if uint8(photometricInterpretationValue) == photoMetricInterpretationRGB {
-						fmt.Printf("0x%x", photometricInterpretationValue)
+					if photometricInterpretationValue == photometricInterpretationRGB {
+						//fmt.Printf("0x%x", photometricInterpretationValue)
 					}
 				}
 			} else if tagAsInt == modelTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
-					imageModelTagData := make([]byte, numOfBytesAsInt)
+					imageModelTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
 					println(string(imageModelTagData))
 				}
 			} else if tagAsInt == makeTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
-					imageMakeTagData := make([]byte, numOfBytesAsInt)
+					imageMakeTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageMakeTagData)
 					println(string(imageMakeTagData))
