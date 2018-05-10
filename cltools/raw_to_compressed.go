@@ -3,6 +3,7 @@ package cltools
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -679,7 +680,13 @@ func parseAllImageData(file *os.File) error {
 
 	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
+	imageWidthFound := false
+	imageHeightFound := false
+
+	//for each byte in the IFD0
 	for i := range ifd0Data {
+		//if we're currently 12 bytes lower than the total byte count
+		//TODO: Change this to use MOD(i, 12) == 0
 		if i+12 < len(ifd0Data) {
 
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
@@ -687,16 +694,45 @@ func parseAllImageData(file *os.File) error {
 			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
 			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == compressionTag {
+			if tagAsInt == subfileTypeTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					if numOfElementsAsInt == 1 {
+						firstBitFlag := ifd0Data[i+11]  //if first bit is 1 then its reduced resolution
+						secondBitFlag := ifd0Data[i+10] //if second bit is 1 then its a single page image of a multi-page image
+						thirdBitFlag := ifd0Data[i+9]   //if the third bit is 1 then image defines transparency mask for another image in tiff file. The Photometric interpritation value must be 4
+						fourthBitFlag := ifd0Data[i+8]  //if the forth bit is 1 then MRC imaging model
+
+						if firstBitFlag == 1 {
+							fmt.Printf("Image type is -> Reduced resolution image\n")
+						} else if secondBitFlag == 1 {
+							fmt.Printf("Image type is -> Single page of multipage image\n")
+						} else if thirdBitFlag == 1 {
+							fmt.Printf("Image type is -> Transparency mask image\n")
+						} else if fourthBitFlag == 1 {
+							fmt.Printf("MRC imaging model?\n")
+						}
+					}
+				}
+			} else if tagAsInt == imageWidthTag {
+				if !imageWidthFound {
+					fmt.Printf("Image width tag -> %d\n", dataValueOrDataOffsetAsInt)
+					imageWidthFound = true
+				}
+			} else if tagAsInt == imageHeightTag {
+				if !imageHeightFound {
+					fmt.Printf("Image height tag -> %d\n", dataValueOrDataOffsetAsInt)
+					imageHeightFound = true
+				}
+			} else if tagAsInt == compressionTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					imageCompressionValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
-					println(imageCompressionValue)
+					fmt.Printf("Compression -> %d\n", imageCompressionValue)
 				}
 			} else if tagAsInt == photometricInterpretationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					if photometricInterpretationValue == photometricInterpretationRGB {
-						//fmt.Printf("0x%x", photometricInterpretationValue)
+						fmt.Printf("Photometric Interpretation -> RGB\n")
 					}
 				}
 			} else if tagAsInt == modelTag {
@@ -704,14 +740,14 @@ func parseAllImageData(file *os.File) error {
 					imageModelTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
-					println(string(imageModelTagData))
+					fmt.Printf("Camera model -> %s\n", string(imageModelTagData))
 				}
 			} else if tagAsInt == makeTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageMakeTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageMakeTagData)
-					println(string(imageMakeTagData))
+					fmt.Printf("Camera make -> %s\n", string(imageMakeTagData))
 				}
 			}
 		}
