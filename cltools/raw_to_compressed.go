@@ -723,6 +723,11 @@ func parseAllImageData(file *os.File) error {
 					fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
 					imageHeightFound = true
 				}
+			} else if tagAsInt == bitsPerSampleTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					bitsPerSampleValue := utils.ConvertBytesToUInt64(byte(0), byte(0), ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], ifd0Data[i+12], ifd0Data[i+13], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Bits per sample -> %d\n", bitsPerSampleValue)
+				}
 			} else if tagAsInt == compressionTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					imageCompressionValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
