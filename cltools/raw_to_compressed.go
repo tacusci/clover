@@ -715,12 +715,12 @@ func parseAllImageData(file *os.File) error {
 				}
 			} else if tagAsInt == imageWidthTag {
 				if !imageWidthFound {
-					fmt.Printf("Image width tag -> %d\n", dataValueOrDataOffsetAsInt)
+					fmt.Printf("Image width -> %d\n", dataValueOrDataOffsetAsInt)
 					imageWidthFound = true
 				}
 			} else if tagAsInt == imageHeightTag {
 				if !imageHeightFound {
-					fmt.Printf("Image height tag -> %d\n", dataValueOrDataOffsetAsInt)
+					fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
 					imageHeightFound = true
 				}
 			} else if tagAsInt == compressionTag {
@@ -732,7 +732,7 @@ func parseAllImageData(file *os.File) error {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					if photometricInterpretationValue == photometricInterpretationRGB {
-						fmt.Printf("Photometric Interpretation -> RGB\n")
+						fmt.Printf("Photometric interpretation -> RGB\n")
 					}
 				}
 			} else if tagAsInt == modelTag {
