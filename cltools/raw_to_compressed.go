@@ -666,12 +666,15 @@ func parseAllImageData(file *os.File) error {
 
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
 			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
-			//numOfComponentsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
-			//dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
+			numOfBytesAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == subIFDA100DataOffsetTag {
-				if uint8(dataFormatAsInt) == unsignedLongType {
-					//numberOfOccurences := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
+			if tagAsInt == modelTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					imageModelTagData := make([]byte, numOfBytesAsInt)
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					file.Read(imageModelTagData)
+					println(string(imageModelTagData))
 				}
 			}
 		}
