@@ -3,6 +3,7 @@ package cltools
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ const (
 	imageHeightTag                   uint16 = 0x0101
 	bitsPerSampleTag                 uint16 = 0x0102
 	compressionTag                   uint16 = 0x0103
-	photoMetricInterpretationTag     uint16 = 0x0106
+	photometricInterpretationTag     uint16 = 0x0106
 	thresholdingTag                  uint16 = 0x0107
 	cellWidthTag                     uint16 = 0x0108
 	cellLengthTag                    uint16 = 0x0109
@@ -581,18 +582,18 @@ const (
 	signedRationalType   uint8 = 10 //is 8 bytes in size
 	singleFloatType      uint8 = 11 //is 4 bytes in size
 	doubleFloatType      uint8 = 12 //is 8 bytes in size
+
+	photoMetricInterpretationWhiteIsZero      uint8 = 0
+	photoMetricInterpretationBlackIsZero      uint8 = 1
+	photoMetricInterpretationRGB              uint8 = 2
+	photoMetricInterpretationPaletteColor     uint8 = 3
+	photoMetricInterpretationTransparencyMask uint8 = 4
 )
 
 type tiffHeaderData struct {
 	endianOrder utils.EndianOrder
 	magicNum    uint16
 	tiffOffset  uint32
-}
-
-type exifImageData struct {
-	imageWidth      uint32
-	imageHeight     uint32
-	jpgFromRawStart uint32
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -669,12 +670,26 @@ func parseAllImageData(file *os.File) error {
 			numOfBytesAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
 			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+8], ifd0Data[i+9], ifd0Data[i+10], ifd0Data[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == modelTag {
+			if tagAsInt == photometricInterpretationTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					if uint8(photometricInterpretationValue) == photoMetricInterpretationRGB {
+						fmt.Printf("0x%x", photometricInterpretationValue)
+					}
+				}
+			} else if tagAsInt == modelTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageModelTagData := make([]byte, numOfBytesAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
 					println(string(imageModelTagData))
+				}
+			} else if tagAsInt == makeTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					imageMakeTagData := make([]byte, numOfBytesAsInt)
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					file.Read(imageMakeTagData)
+					println(string(imageMakeTagData))
 				}
 			}
 		}
