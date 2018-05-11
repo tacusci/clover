@@ -830,7 +830,7 @@ func parseAllImageData(file *os.File) error {
 				}
 			} else if tagAsInt == referenceBlackWhiteTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
-					fmt.Printf("Num of bytes to read for Reference Black and White -> %d", 6*8)
+					fmt.Printf("Num of bytes to read for Reference Black and White -> %d\n", 6*8)
 				}
 			}
 		}
