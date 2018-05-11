@@ -709,9 +709,13 @@ func parseAllImageData(file *os.File) error {
 					}
 				}
 			} else if tagAsInt == imageWidthTag {
-				fmt.Printf("Image width -> %d\n", dataValueOrDataOffsetAsInt)
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("Image width -> %d\n", dataValueOrDataOffsetAsInt)
+				}
 			} else if tagAsInt == imageHeightTag {
-				fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
+				}
 			} else if tagAsInt == bitsPerSampleTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
@@ -746,6 +750,65 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
 					fmt.Printf("Camera model -> %s\n", string(imageModelTagData))
+				}
+			} else if tagAsInt == stripOffsetsTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("Strip offsets -> %d\n", dataValueOrDataOffsetAsInt)
+				}
+			} else if tagAsInt == orientationTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					orientationTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Orientation flag -> %d\n", orientationTagData)
+				}
+			} else if tagAsInt == samplesPerPixelTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					samplesPerPixelTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Samples per pixel flag -> %d\n", samplesPerPixelTagData)
+				}
+			} else if tagAsInt == rowsPerStripTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("Rows per strip -> %d\n", dataValueOrDataOffsetAsInt)
+				}
+			} else if tagAsInt == stripByteCountsTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("Strip byte counts -> %d\n", dataValueOrDataOffsetAsInt)
+				}
+			} else if tagAsInt == xResolutionTag {
+				if uint8(dataFormatAsInt) == unsignedRationalType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					xResolutionTagData := make([]byte, 8)
+					file.Read(xResolutionTagData)
+					xResolutionTagNum := utils.ConvertBytesToUInt64(xResolutionTagData[0], xResolutionTagData[1], xResolutionTagData[2],
+						xResolutionTagData[3], xResolutionTagData[4], xResolutionTagData[5],
+						xResolutionTagData[6], xResolutionTagData[7], imageTiffHeaderData.endianOrder)
+					fmt.Printf("X Resolution data -> %d\n", xResolutionTagNum)
+				}
+			} else if tagAsInt == yResolutionTag {
+				if uint8(dataFormatAsInt) == unsignedRationalType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					yResolutionTagData := make([]byte, 8)
+					file.Read(yResolutionTagData)
+					yResolutionTagNum := utils.ConvertBytesToUInt64(yResolutionTagData[0], yResolutionTagData[1], yResolutionTagData[2],
+						yResolutionTagData[3], yResolutionTagData[4], yResolutionTagData[5],
+						yResolutionTagData[6], yResolutionTagData[7], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Y Resolution data -> %d\n", yResolutionTagNum)
+				}
+			} else if tagAsInt == planarConfigurationTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					planarConfigurationTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Planar configuration -> %d\n", planarConfigurationTagData)
+				}
+			} else if tagAsInt == resolutionUnitTag {
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					resolutionUnitTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Resolution unit -> %d\n", resolutionUnitTagData)
+				}
+			} else if tagAsInt == softwareTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					softwareTextData := make([]byte, numOfElementsAsInt)
+					file.Read(softwareTextData)
+					fmt.Printf("Software -> %s\n", string(softwareTextData))
 				}
 			}
 		}
