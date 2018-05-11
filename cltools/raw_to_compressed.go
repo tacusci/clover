@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"path"
 	"strings"
@@ -680,15 +681,9 @@ func parseAllImageData(file *os.File) error {
 
 	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
-	imageWidthFound := false
-	imageHeightFound := false
-
 	//for each byte in the IFD0
 	for i := range ifd0Data {
-		//if we're currently 12 bytes lower than the total byte count
-		//TODO: Change this to use MOD(i, 12) == 0
-		if i+12 < len(ifd0Data) {
-
+		if math.Mod(float64(i), float64(12)) == 0 {
 			tagAsInt := utils.ConvertBytesToUInt16(ifd0Data[i], ifd0Data[i+1], imageTiffHeaderData.endianOrder)
 			dataFormatAsInt := utils.ConvertBytesToUInt16(ifd0Data[i+2], ifd0Data[i+3], imageTiffHeaderData.endianOrder)
 			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifd0Data[i+4], ifd0Data[i+5], ifd0Data[i+6], ifd0Data[i+7], imageTiffHeaderData.endianOrder)
@@ -714,14 +709,9 @@ func parseAllImageData(file *os.File) error {
 					}
 				}
 			} else if tagAsInt == imageWidthTag {
-				if !imageWidthFound {
-					imageWidthFound = true
-				}
+				fmt.Printf("Image width -> %d\n", dataValueOrDataOffsetAsInt)
 			} else if tagAsInt == imageHeightTag {
-				if !imageHeightFound {
-					fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
-					imageHeightFound = true
-				}
+				fmt.Printf("Image height -> %d\n", dataValueOrDataOffsetAsInt)
 			} else if tagAsInt == bitsPerSampleTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
