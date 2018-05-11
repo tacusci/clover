@@ -742,14 +742,14 @@ func parseAllImageData(file *os.File) error {
 					imageMakeTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageMakeTagData)
-					fmt.Printf("Camera make -> %s\n", string(imageMakeTagData))
+					fmt.Printf("Camera make -> %s\n", imageMakeTagData)
 				}
 			} else if tagAsInt == modelTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageModelTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
-					fmt.Printf("Camera model -> %s\n", string(imageModelTagData))
+					fmt.Printf("Camera model -> %s\n", imageModelTagData)
 				}
 			} else if tagAsInt == stripOffsetsTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
@@ -781,7 +781,7 @@ func parseAllImageData(file *os.File) error {
 					xResolutionTagNum := utils.ConvertBytesToUInt64(xResolutionTagData[0], xResolutionTagData[1], xResolutionTagData[2],
 						xResolutionTagData[3], xResolutionTagData[4], xResolutionTagData[5],
 						xResolutionTagData[6], xResolutionTagData[7], imageTiffHeaderData.endianOrder)
-					fmt.Printf("X Resolution data -> %d\n", xResolutionTagNum)
+					fmt.Printf("X Resolution -> %d\n", xResolutionTagNum)
 				}
 			} else if tagAsInt == yResolutionTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
@@ -791,7 +791,7 @@ func parseAllImageData(file *os.File) error {
 					yResolutionTagNum := utils.ConvertBytesToUInt64(yResolutionTagData[0], yResolutionTagData[1], yResolutionTagData[2],
 						yResolutionTagData[3], yResolutionTagData[4], yResolutionTagData[5],
 						yResolutionTagData[6], yResolutionTagData[7], imageTiffHeaderData.endianOrder)
-					fmt.Printf("Y Resolution data -> %d\n", yResolutionTagNum)
+					fmt.Printf("Y Resolution -> %d\n", yResolutionTagNum)
 				}
 			} else if tagAsInt == planarConfigurationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
@@ -808,7 +808,29 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					softwareTextData := make([]byte, numOfElementsAsInt)
 					file.Read(softwareTextData)
-					fmt.Printf("Software -> %s\n", string(softwareTextData))
+					fmt.Printf("Software -> %s\n", softwareTextData)
+				}
+			} else if tagAsInt == modifyDateTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					modifyDateTextData := make([]byte, numOfElementsAsInt)
+					file.Read(modifyDateTextData)
+					fmt.Printf("Modified date -> %s\n", modifyDateTextData)
+				}
+			} else if tagAsInt == subIFDA100DataOffsetTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					subIFDA100DataOffsetTagData := make([]byte, 8)
+					file.Read(subIFDA100DataOffsetTagData)
+					subIfdA100DataOffsetTagInt := utils.ConvertBytesToUInt64(subIFDA100DataOffsetTagData[0], subIFDA100DataOffsetTagData[1],
+						subIFDA100DataOffsetTagData[2], subIFDA100DataOffsetTagData[3],
+						subIFDA100DataOffsetTagData[4], subIFDA100DataOffsetTagData[5],
+						subIFDA100DataOffsetTagData[6], subIFDA100DataOffsetTagData[7], imageTiffHeaderData.endianOrder)
+					fmt.Printf("SubIFDA100Data offset -> %d\n", subIfdA100DataOffsetTagInt)
+				}
+			} else if tagAsInt == referenceBlackWhiteTag {
+				if uint8(dataFormatAsInt) == unsignedRationalType {
+					fmt.Printf("Num of bytes to read for Reference Black and White -> %d", 6*8)
 				}
 			}
 		}
