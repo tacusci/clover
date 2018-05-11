@@ -715,7 +715,6 @@ func parseAllImageData(file *os.File) error {
 				}
 			} else if tagAsInt == imageWidthTag {
 				if !imageWidthFound {
-					fmt.Printf("Image width -> %d\n", dataValueOrDataOffsetAsInt)
 					imageWidthFound = true
 				}
 			} else if tagAsInt == imageHeightTag {
