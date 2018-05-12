@@ -822,6 +822,7 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					subIFDA100DataOffsetTagData := make([]byte, 8)
 					file.Read(subIFDA100DataOffsetTagData)
+					//THIS IS ALL WRONG NEED TO WORK IT OUT,
 					subIfdA100DataOffsetTagInt := utils.ConvertBytesToUInt64(subIFDA100DataOffsetTagData[0], subIFDA100DataOffsetTagData[1],
 						subIFDA100DataOffsetTagData[2], subIFDA100DataOffsetTagData[3],
 						subIFDA100DataOffsetTagData[4], subIFDA100DataOffsetTagData[5],
@@ -830,7 +831,25 @@ func parseAllImageData(file *os.File) error {
 				}
 			} else if tagAsInt == referenceBlackWhiteTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
-					fmt.Printf("Num of bytes to read for Reference Black and White -> %d\n", 6*8)
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					referenceBlackWhiteTagData := make([]byte, 8*numOfElementsAsInt)
+					file.Read(referenceBlackWhiteTagData)
+					//THIS IS ALL WRONG NEED TO WORK IT OUT,
+					referenceBlackWhiteTagInt := utils.ConvertBytesToUInt64(referenceBlackWhiteTagData[0], referenceBlackWhiteTagData[1],
+						referenceBlackWhiteTagData[2], referenceBlackWhiteTagData[3],
+						referenceBlackWhiteTagData[4], referenceBlackWhiteTagData[5],
+						referenceBlackWhiteTagData[6], referenceBlackWhiteTagData[7], imageTiffHeaderData.endianOrder)
+					fmt.Printf("Reference black white tag -> %d\n", referenceBlackWhiteTagInt)
+				}
+			} else if tagAsInt == exifOffsetTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					fmt.Printf("EXIF offset -> %d\n", dataValueOrDataOffsetAsInt)
+				}
+			} else if tagAsInt == gpsInfoTag {
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					file.Seek(dataValueOrDataOffsetAsInt)
+					gpsInfoTagData :=
+						fmt.Printf("GPS Info -> %d\n", dataValueOrDataOffsetAsInt)
 				}
 			}
 		}
