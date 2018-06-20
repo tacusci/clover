@@ -905,9 +905,9 @@ func parseAllImageData(file *os.File) error {
 
 	if thumbnailIFD.SubIFDOffset > 0 {
 		file.Seek(int64(thumbnailIFD.SubIFDOffset), os.SEEK_SET)
-		firstByte := make([]byte, 1)
+		firstByte := make([]byte, 4)
 		file.Read(firstByte)
-		fmt.Printf("%t\n", firstByte[0]))
+		fmt.Printf("%b\n", firstByte)
 	}
 
 	return nil
