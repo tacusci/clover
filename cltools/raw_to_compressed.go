@@ -621,6 +621,25 @@ type nefIFD struct {
 	BitsPerSample                 []byte
 	CompressionFlag               uint16
 	PhotometricInterpretationFlag uint16
+	ImageMakeTag                  []byte
+	ImageModelTag                 []byte
+	StripOffsets                  uint32
+	OrientationFlag               uint16
+	SamplesPerPixel               uint16
+	RowsPerStrip                  uint32
+	StripByteCounts               uint32
+	XResolution                   uint32
+	YResolution                   uint32
+	PlanarConfiguration           uint16
+	ResolutionUnit                uint16
+	SoftwareTextData              []byte
+	DateTimeText                  []byte
+	SubIFDOffset                  uint32
+	ReferenceBlackWhite           uint64
+	ExifOffset                    uint32
+	GpsInfo                       uint32
+	DateTimeOriginalText          []byte
+	TiffEPStandardID              []byte
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -759,6 +778,7 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageMakeTagData)
 					fmt.Printf("Camera make -> %s\n", imageMakeTagData)
+					thumbnailIFD.ImageMakeTag = imageMakeTagData
 				}
 			} else if tagAsInt == modelTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -766,46 +786,56 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					file.Read(imageModelTagData)
 					fmt.Printf("Camera model -> %s\n", imageModelTagData)
+					thumbnailIFD.ImageModelTag = imageModelTagData
 				}
 			} else if tagAsInt == stripOffsetsTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					fmt.Printf("Strip offsets -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.StripOffsets = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == orientationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					orientationTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					fmt.Printf("Orientation flag -> %d\n", orientationTagData)
+					thumbnailIFD.OrientationFlag = orientationTagData
 				}
 			} else if tagAsInt == samplesPerPixelTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					samplesPerPixelTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					fmt.Printf("Samples per pixel flag -> %d\n", samplesPerPixelTagData)
+					thumbnailIFD.SamplesPerPixel = samplesPerPixelTagData
 				}
 			} else if tagAsInt == rowsPerStripTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					fmt.Printf("Rows per strip -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.RowsPerStrip = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == stripByteCountsTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					fmt.Printf("Strip byte counts -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.StripByteCounts = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == xResolutionTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
 					fmt.Printf("X Resolution -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.XResolution = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == yResolutionTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
 					fmt.Printf("Y Resolution -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.YResolution = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == planarConfigurationTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					planarConfigurationTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					fmt.Printf("Planar configuration -> %d\n", planarConfigurationTagData)
+					thumbnailIFD.PlanarConfiguration = planarConfigurationTagData
 				}
 			} else if tagAsInt == resolutionUnitTag {
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					resolutionUnitTagData := utils.ConvertBytesToUInt16(ifd0Data[i+8], ifd0Data[i+9], imageTiffHeaderData.endianOrder)
 					fmt.Printf("Resolution unit -> %d\n", resolutionUnitTagData)
+					thumbnailIFD.ResolutionUnit = resolutionUnitTagData
 				}
 			} else if tagAsInt == softwareTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -813,6 +843,7 @@ func parseAllImageData(file *os.File) error {
 					softwareTextData := make([]byte, numOfElementsAsInt)
 					file.Read(softwareTextData)
 					fmt.Printf("Software -> %s\n", softwareTextData)
+					thumbnailIFD.SoftwareTextData = softwareTextData
 				}
 			} else if tagAsInt == modifyDateTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -820,10 +851,12 @@ func parseAllImageData(file *os.File) error {
 					modifyDateTextData := make([]byte, numOfElementsAsInt)
 					file.Read(modifyDateTextData)
 					fmt.Printf("Modified date -> %s\n", modifyDateTextData)
+					thumbnailIFD.DateTimeText = modifyDateTextData
 				}
 			} else if tagAsInt == subIFDA100DataOffsetTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					fmt.Printf("SubIFDA100Data offset -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.SubIFDOffset = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == referenceBlackWhiteTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
@@ -836,16 +869,19 @@ func parseAllImageData(file *os.File) error {
 						referenceBlackWhiteTagData[4], referenceBlackWhiteTagData[5],
 						referenceBlackWhiteTagData[6], referenceBlackWhiteTagData[7], imageTiffHeaderData.endianOrder)
 					fmt.Printf("Reference black white tag -> %d\n", referenceBlackWhiteTagInt)
+					thumbnailIFD.ReferenceBlackWhite = referenceBlackWhiteTagInt
 				}
 			} else if tagAsInt == exifOffsetTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					fmt.Printf("EXIF offset -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.ExifOffset = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == gpsInfoTag {
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					//file.Seek(dataValueOrDataOffsetAsInt)
 					//gpsInfoTagData :=
 					fmt.Printf("GPS Info -> %d\n", dataValueOrDataOffsetAsInt)
+					thumbnailIFD.GpsInfo = dataValueOrDataOffsetAsInt
 				}
 			} else if tagAsInt == dateTimeOriginalTag {
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -853,6 +889,7 @@ func parseAllImageData(file *os.File) error {
 					dateTimeOriginalTagData := make([]byte, numOfElementsAsInt)
 					file.Read(dateTimeOriginalTagData)
 					fmt.Printf("Date/Time original -> %s\n", dateTimeOriginalTagData)
+					thumbnailIFD.DateTimeOriginalText = dateTimeOriginalTagData
 				}
 			} else if tagAsInt == tiffEPStandardIDTag {
 				if uint8(dataFormatAsInt) == unsignedByteType {
@@ -860,9 +897,17 @@ func parseAllImageData(file *os.File) error {
 					tiffEPStandardIDTagData := make([]byte, numOfElementsAsInt)
 					file.Read(tiffEPStandardIDTagData)
 					fmt.Printf("Tiff EP Standard tag: %d\n", tiffEPStandardIDTagData)
+					thumbnailIFD.TiffEPStandardID = tiffEPStandardIDTagData
 				}
 			}
 		}
+	}
+
+	if thumbnailIFD.SubIFDOffset > 0 {
+		file.Seek(int64(thumbnailIFD.SubIFDOffset), os.SEEK_SET)
+		firstByte := make([]byte, 1)
+		file.Read(firstByte)
+		fmt.Printf("%t\n", firstByte[0]))
 	}
 
 	return nil
