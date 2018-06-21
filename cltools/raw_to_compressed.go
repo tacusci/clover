@@ -903,12 +903,16 @@ func parseAllImageData(file *os.File) error {
 		}
 	}
 
-	if thumbnailIFD.SubIFDOffset > 0 {
-		file.Seek(int64(thumbnailIFD.SubIFDOffset), os.SEEK_SET)
-		firstByte := make([]byte, 4)
-		file.Read(firstByte)
-		fmt.Printf("%b\n", firstByte)
-	}
+	// if thumbnailIFD.SubIFDOffset > 0 {
+	// 	file.Seek(int64(1570), os.SEEK_SET)
+	// 	firstByte := make([]byte, 8)
+	// 	file.Read(firstByte)
+	// 	for i := 0; i < len(firstByte); i++ {
+	// 		fmt.Printf("%b", firstByte[i])
+	// 		fmt.Printf(" ")
+	// 	}
+	// 	fmt.Println("")
+	// }
 
 	return nil
 }
