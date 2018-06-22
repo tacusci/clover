@@ -23,7 +23,15 @@ func TranslatePath(path string) string {
 	return path
 }
 
-//ConvertBytesToUInt16 takes two byte values and converts it to a two byte long uint
+//ConvertBytesSliceToUInt16 takes a slice of two bytes and converts them to a uint16
+func ConvertBytesSliceToUInt16(btc []byte, eo EndianOrder) uint16 {
+	if len(btc) != 2 {
+		return 0
+	}
+	return ConvertBytesToUInt16(btc[0], btc[1], eo)
+}
+
+//ConvertBytesToUInt16 takes two byte values and converts it to a uint16
 func ConvertBytesToUInt16(byte1 byte, byte2 byte, endianOrder EndianOrder) uint16 {
 	var resultInt uint16
 	if endianOrder == BigEndian {
@@ -36,6 +44,7 @@ func ConvertBytesToUInt16(byte1 byte, byte2 byte, endianOrder EndianOrder) uint1
 	return resultInt
 }
 
+//ConvertBytesSliceToUInt32 takes a slice of four bytes and converts them to a uint32
 func ConvertBytesSliceToUInt32(btc []byte, eo EndianOrder) uint32 {
 	if len(btc) != 4 {
 		return 0
@@ -43,7 +52,7 @@ func ConvertBytesSliceToUInt32(btc []byte, eo EndianOrder) uint32 {
 	return ConvertBytesToUInt32(btc[0], btc[1], btc[2], btc[3], eo)
 }
 
-//ConvertBytesToUInt32 takes four byte values and converts them to a 4 byte long uint
+//ConvertBytesToUInt32 takes four byte values and converts them to a uint32
 func ConvertBytesToUInt32(byte1 byte, byte2 byte, byte3 byte, byte4 byte, endianOrder EndianOrder) uint32 {
 	var resultInt uint32
 	if endianOrder == BigEndian {
@@ -60,7 +69,15 @@ func ConvertBytesToUInt32(byte1 byte, byte2 byte, byte3 byte, byte4 byte, endian
 	return resultInt
 }
 
-//ConvertBytesToUInt64 takes 8 byte values and converts them to a 8 byte long long uint
+//ConvertBytesSliceToUInt64 takes a slice of eight bytes and converts them to a uint64
+func ConvertBytesSliceToUInt64(btc []byte, eo EndianOrder) uint64 {
+	if len(btc) != 8 {
+		return 0
+	}
+	return ConvertBytesToUInt64(btc[0], btc[1], btc[2], btc[3], btc[4], btc[5], btc[6], btc[7], eo)
+}
+
+//ConvertBytesToUInt64 takes eight byte values and converts them to a uint64
 func ConvertBytesToUInt64(byte1 byte, byte2 byte, byte3 byte, byte4 byte, byte5 byte, byte6 byte, byte7 byte, byte8 byte, endianOrder EndianOrder) uint64 {
 	var resultInt uint64
 	if endianOrder == BigEndian {
