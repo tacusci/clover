@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"runtime"
 	"strings"
 )
@@ -34,6 +35,13 @@ func ConvertBytesToUInt16(byte1 byte, byte2 byte, endianOrder EndianOrder) uint1
 		resultInt |= uint16(byte2) << 8
 	}
 	return resultInt
+}
+
+func ConvertBytesSliceToUInt32(btc []byte, eo EndianOrder) (uint32, error) {
+	if len(btc) != 4 {
+		return 0, errors.New("Bytes slice incorrect length for conversion")
+	}
+	return ConvertBytesToUInt32(btc[0], btc[1], btc[2], btc[3], eo), nil
 }
 
 //ConvertBytesToUInt32 takes four byte values and converts them to a 4 byte long uint
