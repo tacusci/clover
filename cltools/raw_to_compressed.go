@@ -634,7 +634,7 @@ type nefIFD struct {
 	ResolutionUnit                uint16
 	SoftwareTextData              []byte
 	DateTimeText                  []byte
-	SubIFDOffset                  uint32
+	SubIFDOffsets                 []uint32
 	ReferenceBlackWhite           uint64
 	ExifOffset                    uint32
 	GpsInfo                       uint32
@@ -850,13 +850,26 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					modifyDateTextData := make([]byte, numOfElementsAsInt)
 					file.Read(modifyDateTextData)
-					fmt.Printf("Modified date -> %s\n", modifyDateTextData)
+					fmt.Printf("Date/Time (is editable) -> %s\n", modifyDateTextData)
 					thumbnailIFD.DateTimeText = modifyDateTextData
 				}
+			} else if tagAsInt == artistTag {
+				if uint8(dataFormatAsInt) == asciiStringsType {
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					artistTextData := make([]byte, numOfElementsAsInt)
+					file.Read(artistTextData)
+					fmt.Printf("Artist: %s\n", artistTextData)
+				}
 			} else if tagAsInt == subIFDA100DataOffsetTag {
+				//correct offset should actually be: 176332
 				if uint8(dataFormatAsInt) == unsignedLongType {
-					fmt.Printf("SubIFDA100Data offset -> %d\n", dataValueOrDataOffsetAsInt)
-					thumbnailIFD.SubIFDOffset = dataValueOrDataOffsetAsInt
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					subIfdDataOffsetData := make([]byte, 4*numOfElementsAsInt)
+					file.Read(subIfdDataOffsetData)
+					//there's actually two offsets, will have to adapt this later to be more agnostic against how many offset values there are
+					thumbnailIFD.SubIFDOffsets = []uint32{utils.ConvertBytesToUInt32(subIfdDataOffsetData[0], subIfdDataOffsetData[1], subIfdDataOffsetData[2], subIfdDataOffsetData[3], imageTiffHeaderData.endianOrder),
+						utils.ConvertBytesToUInt32(subIfdDataOffsetData[4], subIfdDataOffsetData[5], subIfdDataOffsetData[6], subIfdDataOffsetData[7], imageTiffHeaderData.endianOrder)}
+					fmt.Printf("SubIFDOffsets -> %d\n", thumbnailIFD.SubIFDOffsets)
 				}
 			} else if tagAsInt == referenceBlackWhiteTag {
 				if uint8(dataFormatAsInt) == unsignedRationalType {
@@ -888,7 +901,7 @@ func parseAllImageData(file *os.File) error {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					dateTimeOriginalTagData := make([]byte, numOfElementsAsInt)
 					file.Read(dateTimeOriginalTagData)
-					fmt.Printf("Date/Time original -> %s\n", dateTimeOriginalTagData)
+					fmt.Printf("Date/Time original (standard says cannot be edited) -> %s\n", dateTimeOriginalTagData)
 					thumbnailIFD.DateTimeOriginalText = dateTimeOriginalTagData
 				}
 			} else if tagAsInt == tiffEPStandardIDTag {
@@ -902,17 +915,6 @@ func parseAllImageData(file *os.File) error {
 			}
 		}
 	}
-
-	// if thumbnailIFD.SubIFDOffset > 0 {
-	// 	file.Seek(int64(1570), os.SEEK_SET)
-	// 	firstByte := make([]byte, 8)
-	// 	file.Read(firstByte)
-	// 	for i := 0; i < len(firstByte); i++ {
-	// 		fmt.Printf("%b", firstByte[i])
-	// 		fmt.Printf(" ")
-	// 	}
-	// 	fmt.Println("")
-	// }
 
 	return nil
 }
