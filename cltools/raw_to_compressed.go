@@ -867,8 +867,7 @@ func parseAllImageData(file *os.File) error {
 					subIfdDataOffsetData := make([]byte, 4*numOfElementsAsInt)
 					file.Read(subIfdDataOffsetData)
 					//there's actually two offsets, will have to adapt this later to be more agnostic against how many offset values there are
-					thumbnailIFD.SubIFDOffsets = []uint32{utils.ConvertBytesToUInt32(subIfdDataOffsetData[0], subIfdDataOffsetData[1], subIfdDataOffsetData[2], subIfdDataOffsetData[3], imageTiffHeaderData.endianOrder),
-						utils.ConvertBytesToUInt32(subIfdDataOffsetData[4], subIfdDataOffsetData[5], subIfdDataOffsetData[6], subIfdDataOffsetData[7], imageTiffHeaderData.endianOrder)}
+					thumbnailIFD.SubIFDOffsets = []uint32{utils.ConvertBytesSliceToUInt32(subIfdDataOffsetData[:4], imageTiffHeaderData.endianOrder), utils.ConvertBytesSliceToUInt32(subIfdDataOffsetData[4:], imageTiffHeaderData.endianOrder)}
 					fmt.Printf("SubIFDOffsets -> %d\n", thumbnailIFD.SubIFDOffsets)
 				}
 			} else if tagAsInt == referenceBlackWhiteTag {
