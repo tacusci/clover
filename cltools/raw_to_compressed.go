@@ -706,7 +706,7 @@ func parseAllImageData(file *os.File) error {
 
 	imageTiffHeaderData, err = getTiffHeader(header)
 
-	ifd0Data := readIfd(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
+	ifd0Data := readIFD(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
 
 	thumbnailIFD := &nefIFD{}
 
@@ -918,7 +918,7 @@ func parseAllImageData(file *os.File) error {
 	return nil
 }
 
-func readIfd(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
+func readIFD(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
 	ifdTagCountBytes := make([]byte, 2)
 	file.Seek(int64(ifdOffset), os.SEEK_SET)
 	file.Read(ifdTagCountBytes)
