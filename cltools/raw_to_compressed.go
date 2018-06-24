@@ -705,11 +705,10 @@ func parseAllImageData(file *os.File) error {
 	}
 
 	imageTiffHeaderData, err = getTiffHeader(header)
-
-	ifd0Data := readIFD(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
-
-	thumbnailIFD := parseIFDData(file, ifd0Data, imageTiffHeaderData)
-	fmt.Printf("%+v", thumbnailIFD)
+	ifd0Data := getIFDData(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
+	ifd0 := parseIFDData(file, ifd0Data, imageTiffHeaderData)
+	thumbnailIFDData := getIFDData(file, ifd0.SubIFDOffsets[0], imageTiffHeaderData.endianOrder)
+	parseIFDData(file, thumbnailIFDData, imageTiffHeaderData)
 
 	return nil
 }
@@ -869,12 +868,10 @@ func parseIFDData(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeaderD
 			} else if tagAsInt == subIFDA100DataOffsetTag {
 				//correct offset should actually be: 176332
 				if uint8(dataFormatAsInt) == unsignedLongType {
-					fmt.Printf("Initial subIFDOffsets offset -> %d\n", dataValueOrDataOffsetAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					subIfdDataOffsetData := make([]byte, 4*numOfElementsAsInt)
-					fmt.Printf("Num components -> %d\n", numOfElementsAsInt)
 					file.Read(subIfdDataOffsetData)
-					ifd.SubIFDOffsets = make([]uint32, numOfElementsAsInt)
+					ifd.SubIFDOffsets = make([]uint32, 0)
 					var i uint32
 					start := 0
 					end := 4
@@ -932,7 +929,7 @@ func parseIFDData(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeaderD
 	return *ifd
 }
 
-func readIFD(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
+func getIFDData(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
 	ifdTagCountBytes := make([]byte, 2)
 	file.Seek(int64(ifdOffset), os.SEEK_SET)
 	file.Read(ifdTagCountBytes)
