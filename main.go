@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/tacusci/clover/cltools"
+	"github.com/tacusci/logging"
 )
 
 func outputUsage() {
@@ -17,6 +18,19 @@ func outputUsage() {
 func outputUsageAndClose() {
 	outputUsage()
 	os.Exit(1)
+}
+
+func setLoggingLevel() {
+	debugLevel := flag.Bool("d", false, "Set logging to debug")
+	flag.Parse()
+
+	loggingLevel := logging.InfoLevel
+
+	if *debugLevel {
+		logging.SetLevel(logging.DebugLevel)
+		return
+	}
+	logging.SetLevel(loggingLevel)
 }
 
 func main() {
@@ -36,6 +50,7 @@ func runTool(toolFlag string) {
 		sizeToWrite := flag.Int("s", 0, "Size of total data to write.")
 		skipFileIntegrityCheck := flag.Bool("sic", false, "Skip verifying output file integrity.")
 		dontDeleteFiles := flag.Bool("nd", false, "Don't delete outputted files.")
+		setLoggingLevel()
 
 		flag.Parse()
 
@@ -47,6 +62,7 @@ func runTool(toolFlag string) {
 		inputType := flag.String("it", "", "Extension of image type to convert.")
 		outputType := flag.String("ot", "", "Extension of image type to output to.")
 		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
+		setLoggingLevel()
 
 		flag.Parse()
 
