@@ -733,7 +733,8 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], imageTiffHeaderData.endianOrder)
 			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifdData[i+8], ifdData[i+9], ifdData[i+10], ifdData[i+11], imageTiffHeaderData.endianOrder)
 
-			if tagAsInt == subfileTypeTag {
+			switch tagAsInt {
+			case subfileTypeTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					if numOfElementsAsInt == 1 {
 						firstBitFlag := ifdData[i+11]  //if first bit is 1 then its reduced resolution
@@ -752,17 +753,17 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 						}
 					}
 				}
-			} else if tagAsInt == imageWidthTag {
+			case imageWidthTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Image width -> %d", dataValueOrDataOffsetAsInt))
 					ifd.ImageWidth = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == imageHeightTag {
+			case imageHeightTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Image height -> %d", dataValueOrDataOffsetAsInt))
 					ifd.ImageHeight = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == bitsPerSampleTag {
+			case bitsPerSampleTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					bitsPerSampleData := make([]byte, numOfElementsAsInt)
@@ -770,7 +771,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Bits per sample -> %d", bitsPerSampleData))
 					ifd.BitsPerSample = bitsPerSampleData
 				}
-			} else if tagAsInt == compressionTag {
+			case compressionTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					imageCompressionValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					if imageCompressionValue == compressionNone {
@@ -778,7 +779,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					}
 					ifd.CompressionFlag = imageCompressionValue
 				}
-			} else if tagAsInt == photometricInterpretationTag {
+			case photometricInterpretationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					if photometricInterpretationValue == photometricInterpretationRGB {
@@ -786,7 +787,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					}
 					ifd.PhotometricInterpretationFlag = photometricInterpretationValue
 				}
-			} else if tagAsInt == makeTag {
+			case makeTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageMakeTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
@@ -794,7 +795,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Camera make -> %s", imageMakeTagData))
 					ifd.ImageMakeTag = imageMakeTagData
 				}
-			} else if tagAsInt == modelTag {
+			case modelTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					imageModelTagData := make([]byte, numOfElementsAsInt)
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
@@ -802,56 +803,56 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Camera model -> %s", imageModelTagData))
 					ifd.ImageModelTag = imageModelTagData
 				}
-			} else if tagAsInt == stripOffsetsTag {
+			case stripOffsetsTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Strip offsets -> %d", dataValueOrDataOffsetAsInt))
 					ifd.StripOffsets = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == orientationTag {
+			case orientationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					orientationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Orientation flag -> %d", orientationTagData))
 					ifd.OrientationFlag = orientationTagData
 				}
-			} else if tagAsInt == samplesPerPixelTag {
+			case samplesPerPixelTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					samplesPerPixelTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Samples per pixel flag -> %d", samplesPerPixelTagData))
 					ifd.SamplesPerPixel = samplesPerPixelTagData
 				}
-			} else if tagAsInt == rowsPerStripTag {
+			case rowsPerStripTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Rows per strip -> %d", dataValueOrDataOffsetAsInt))
 					ifd.RowsPerStrip = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == stripByteCountsTag {
+			case stripByteCountsTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Strip byte counts -> %d", dataValueOrDataOffsetAsInt))
 					ifd.StripByteCounts = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == xResolutionTag {
+			case xResolutionTag:
 				if uint8(dataFormatAsInt) == unsignedRationalType {
 					logging.Debug(fmt.Sprintf("X Resolution -> %d", dataValueOrDataOffsetAsInt))
 					ifd.XResolution = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == yResolutionTag {
+			case yResolutionTag:
 				if uint8(dataFormatAsInt) == unsignedRationalType {
 					logging.Debug(fmt.Sprintf("Y Resolution -> %d", dataValueOrDataOffsetAsInt))
 					ifd.YResolution = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == planarConfigurationTag {
+			case planarConfigurationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					planarConfigurationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Planar configuration -> %d", planarConfigurationTagData))
 					ifd.PlanarConfiguration = planarConfigurationTagData
 				}
-			} else if tagAsInt == resolutionUnitTag {
+			case resolutionUnitTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					resolutionUnitTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Resolution unit -> %d", resolutionUnitTagData))
 					ifd.ResolutionUnit = resolutionUnitTagData
 				}
-			} else if tagAsInt == softwareTag {
+			case softwareTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					softwareTextData := make([]byte, numOfElementsAsInt)
@@ -859,7 +860,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Software -> %s", softwareTextData))
 					ifd.SoftwareTextData = softwareTextData
 				}
-			} else if tagAsInt == modifyDateTag {
+			case modifyDateTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					modifyDateTextData := make([]byte, numOfElementsAsInt)
@@ -867,14 +868,14 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Date/Time (is editable) -> %s", modifyDateTextData))
 					ifd.DateTimeText = modifyDateTextData
 				}
-			} else if tagAsInt == artistTag {
+			case artistTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					artistTextData := make([]byte, numOfElementsAsInt)
 					file.Read(artistTextData)
 					logging.Debug(fmt.Sprintf("Artist: %s", artistTextData))
 				}
-			} else if tagAsInt == subIFDA100DataOffsetTag {
+			case subIFDA100DataOffsetTag:
 				//correct offset should actually be: 176332
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
@@ -891,7 +892,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					}
 					logging.Debug(fmt.Sprintf("SubIFDOffsets -> %d", ifd.SubIFDOffsets))
 				}
-			} else if tagAsInt == referenceBlackWhiteTag {
+			case referenceBlackWhiteTag:
 				if uint8(dataFormatAsInt) == unsignedRationalType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					referenceBlackWhiteTagData := make([]byte, 8*numOfElementsAsInt)
@@ -904,19 +905,19 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Reference black white tag -> %d", referenceBlackWhiteTagInt))
 					ifd.ReferenceBlackWhite = referenceBlackWhiteTagInt
 				}
-			} else if tagAsInt == exifOffsetTag {
+			case exifOffsetTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("EXIF offset -> %d", dataValueOrDataOffsetAsInt))
 					ifd.ExifOffset = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == gpsInfoTag {
+			case gpsInfoTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					//file.Seek(dataValueOrDataOffsetAsInt)
 					//gpsInfoTagData :=
 					logging.Debug(fmt.Sprintf("GPS Info -> %d", dataValueOrDataOffsetAsInt))
 					ifd.GpsInfo = dataValueOrDataOffsetAsInt
 				}
-			} else if tagAsInt == dateTimeOriginalTag {
+			case dateTimeOriginalTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					dateTimeOriginalTagData := make([]byte, numOfElementsAsInt)
@@ -924,7 +925,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					logging.Debug(fmt.Sprintf("Date/Time original (standard says cannot be edited) -> %s", dateTimeOriginalTagData))
 					ifd.DateTimeOriginalText = dateTimeOriginalTagData
 				}
-			} else if tagAsInt == tiffEPStandardIDTag {
+			case tiffEPStandardIDTag:
 				if uint8(dataFormatAsInt) == unsignedByteType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					tiffEPStandardIDTagData := make([]byte, numOfElementsAsInt)
