@@ -609,7 +609,7 @@ const (
 	compressionJBIGOnColor         uint16 = 10
 )
 
-type tiffHeaderData struct {
+type tiffHeader struct {
 	endianOrder utils.EndianOrder
 	magicNum    uint16
 	tiffOffset  uint32
@@ -640,6 +640,29 @@ type nefIFD struct {
 	GpsInfo                       uint32
 	DateTimeOriginalText          []byte
 	TiffEPStandardID              []byte
+}
+
+func (nifd *nefIFD) ParseData() {}
+
+type rawImage struct {
+	File   *os.File
+	header tiffHeader
+	ifds   []nefIFD
+}
+
+func (ri *rawImage) Load() error {
+	headerBytes, err := readHeaderBytes(ri.File)
+	if err != nil {
+		return err
+	}
+	ri.header, err = parseHeaderBytes(headerBytes)
+	if err != nil {
+		return err
+	}
+	ifd0Bytes := readIFDBytes(ri.File, ri.header.tiffOffset, ri.header.endianOrder)
+	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
+	ri.ifds = append(ri.ifds, ifd0)
+	return nil
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -679,7 +702,11 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 			}
 
 			log.Printf("Reading image %s", filename)
-			err = parseAllImageData(imageFile)
+			ritc := &rawImage{
+				File: imageFile,
+			}
+
+			err = ritc.Load()
 
 			if err != nil {
 				log.Fatal(err)
@@ -695,25 +722,7 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 	return imagesFoundCount
 }
 
-func parseAllImageData(file *os.File) error {
-	header, err := readHeader(file)
-	imageTiffHeaderData := *new(tiffHeaderData)
-
-	if err != nil {
-		//return here before the next read + check because we always want the root cause error to bubble back up
-		return err
-	}
-
-	imageTiffHeaderData, err = getTiffHeader(header)
-	ifd0Data := getIFDData(file, imageTiffHeaderData.tiffOffset, imageTiffHeaderData.endianOrder)
-	ifd0 := parseIFDData(file, ifd0Data, imageTiffHeaderData)
-	thumbnailIFDData := getIFDData(file, ifd0.SubIFDOffsets[0], imageTiffHeaderData.endianOrder)
-	parseIFDData(file, thumbnailIFDData, imageTiffHeaderData)
-
-	return nil
-}
-
-func parseIFDData(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeaderData) nefIFD {
+func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader) nefIFD {
 	ifd := &nefIFD{}
 	//for each byte in the IFD0
 	for i := range ifdData {
@@ -929,7 +938,7 @@ func parseIFDData(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeaderD
 	return *ifd
 }
 
-func getIFDData(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
+func readIFDBytes(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
 	ifdTagCountBytes := make([]byte, 2)
 	file.Seek(int64(ifdOffset), os.SEEK_SET)
 	file.Read(ifdTagCountBytes)
@@ -944,7 +953,7 @@ func getIFDData(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) 
 	return ifdData
 }
 
-func readHeader(file *os.File) ([]byte, error) {
+func readHeaderBytes(file *os.File) ([]byte, error) {
 	header := make([]byte, 8)
 	file.Seek(0, 0)
 	bytesRead, err := file.Read(header)
@@ -959,23 +968,8 @@ func readHeader(file *os.File) ([]byte, error) {
 	return header, nil
 }
 
-func getEdianOrder(header []byte) utils.EndianOrder {
-	if len(header) >= 4 {
-		var endianFlag uint16
-		//add the bits to the 2 byte int and shove them to the left to make room for the other bits
-		endianFlag |= uint16(header[0]) << 8
-		endianFlag |= uint16(header[1])
-		if endianFlag == 0x4d4d {
-			return utils.BigEndian
-		} else if endianFlag == 0x4949 {
-			return utils.LittleEndian
-		}
-	}
-	return utils.BigEndian
-}
-
-func getTiffHeader(header []byte) (tiffHeaderData, error) {
-	tiffData := new(tiffHeaderData)
+func parseHeaderBytes(header []byte) (tiffHeader, error) {
+	tiffData := new(tiffHeader)
 	tiffData.endianOrder = getEdianOrder(header)
 
 	if len(header) >= 8 {
@@ -993,6 +987,21 @@ func getTiffHeader(header []byte) (tiffHeaderData, error) {
 		return *tiffData, errors.New("Header incorrect length")
 	}
 	return *tiffData, nil
+}
+
+func getEdianOrder(header []byte) utils.EndianOrder {
+	if len(header) >= 4 {
+		var endianFlag uint16
+		//add the bits to the 2 byte int and shove them to the left to make room for the other bits
+		endianFlag |= uint16(header[0]) << 8
+		endianFlag |= uint16(header[1])
+		if endianFlag == 0x4d4d {
+			return utils.BigEndian
+		} else if endianFlag == 0x4949 {
+			return utils.LittleEndian
+		}
+	}
+	return utils.BigEndian
 }
 
 func isDirectory(path string) (bool, error) {
