@@ -21,7 +21,7 @@ func outputUsageAndClose() {
 }
 
 func setLoggingLevel() {
-	debugLevel := flag.Bool("d", false, "Set logging to debug")
+	debugLevel := flag.Bool("debug", false, "Set logging to debug")
 	flag.Parse()
 
 	loggingLevel := logging.InfoLevel
