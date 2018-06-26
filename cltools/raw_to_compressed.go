@@ -645,6 +645,9 @@ type nefIFD struct {
 	JpegFromRawStart              uint32
 	JpegFromRawLength             uint32
 	YCbCrPositioning              uint16
+	CFARepeatPatternDim           uint16
+	CFAPattern2                   uint8
+	SensingMethod                 uint16
 }
 
 type rawImage struct {
@@ -669,9 +672,38 @@ func (ri *rawImage) Load() error {
 	subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
 	subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
 
-	logging.Info(fmt.Sprintf("JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
-	logging.Info(fmt.Sprintf("JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
-	logging.Info(fmt.Sprintf("YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
+	fmt.Println()
+
+	logging.Info(fmt.Sprintf("SUBIFD0 - Subfile type -> 1"))
+	logging.Info(fmt.Sprintf("SUBIFD0 - Compression -> %d", subIFD0.CompressionFlag))
+	logging.Info(fmt.Sprintf("SUBIFD0 - X Resolution -> %d", subIFD0.XResolution))
+	logging.Info(fmt.Sprintf("SUBIFD0 - Y Resolution -> %d", subIFD0.YResolution))
+	logging.Info(fmt.Sprintf("SUBIFD0 - Resolution unit -> %d", subIFD0.ResolutionUnit))
+	logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
+	logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
+	logging.Info(fmt.Sprintf("SUBIFD0 - YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
+
+	fmt.Println()
+
+	subIFD1Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[1], ri.header.endianOrder)
+	subIFD1 := parseIFDBytes(ri.File, subIFD1Bytes, ri.header)
+
+	logging.Info(fmt.Sprintf("SUBIFD1 - Subfile type -> 0"))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Image width -> %d", subIFD1.ImageWidth))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Image height -> %d", subIFD1.ImageHeight))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Bits per sample -> %d", subIFD1.BitsPerSample))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Compression -> %d", subIFD1.CompressionFlag))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Photometric interpretation -> %d", subIFD1.PhotometricInterpretationFlag))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw start -> %d", subIFD1.JpegFromRawStart))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw length -> %d", subIFD1.JpegFromRawLength))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Samples per pixel -> %d", subIFD1.SamplesPerPixel))
+	logging.Info(fmt.Sprintf("SUBIFD1 - X Resolution -> %d", subIFD1.XResolution))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Y Resolution -> %d", subIFD1.YResolution))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Planar configuration -> %d", subIFD1.PlanarConfiguration))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Resolution unit -> %d", subIFD1.ResolutionUnit))
+	logging.Info(fmt.Sprintf("SUBIFD1 - CFA Repeat pattern dim -> %d", subIFD1.CFARepeatPatternDim))
+	logging.Info(fmt.Sprintf("SUBIFD1 - CFA pattern 2 -> %d", subIFD1.CFAPattern2))
+	logging.Info(fmt.Sprintf("SUBIFD1 - Sensing method -> %d", subIFD1.SensingMethod))
 
 	return nil
 }
