@@ -617,7 +617,7 @@ type tiffHeader struct {
 	tiffOffset  uint32
 }
 
-type nefIFD struct {
+type tiffIFD struct {
 	ImageWidth                    uint32
 	ImageHeight                   uint32
 	BitsPerSample                 []byte
@@ -653,7 +653,7 @@ type nefIFD struct {
 type rawImage struct {
 	File   *os.File
 	header tiffHeader
-	ifds   []nefIFD
+	ifds   []tiffIFD
 }
 
 func (ri *rawImage) Load() error {
@@ -764,8 +764,8 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 	return imagesFoundCount
 }
 
-func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader) nefIFD {
-	ifd := &nefIFD{}
+func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader) tiffIFD {
+	ifd := &tiffIFD{}
 	//for each byte in the IFD0
 	for i := range ifdData {
 		if math.Mod(float64(i), float64(12)) == 0 {
