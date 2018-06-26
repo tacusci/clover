@@ -721,14 +721,19 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 		os.Exit(1)
 	}
 
+	ric := make(chan rawImage)
+	ris := make([]rawImage, 0)
+
 	if isDir, _ := isDirectory(locationpath); isDir {
 		var imagesFoundCount int
-		imagesFoundCount = readAllImagesInDir(imagesFoundCount, locationpath, outputDirectory, inputType, outputType, recursive)
-		logging.Info(fmt.Sprintf("Finished running... Found %d images", imagesFoundCount))
+		go readAllImagesInDir(imagesFoundCount, locationpath, outputDirectory, inputType, outputType, recursive, ric)
+		ri := <-ric
+		ris = append(ris, ri)
+		logging.Info(fmt.Sprintf("Finished running... Found %d images", len(ris)))
 	}
 }
 
-func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirectory string, inputType string, outputType string, recursive bool) int {
+func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirectory string, inputType string, outputType string, recursive bool, ric chan rawImage) int {
 
 	fileInfos, err := ioutil.ReadDir(locationpath)
 
@@ -763,8 +768,10 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 
 			imagesFoundCount++
 			imageFile.Close()
+
+			ric <- *ritc
 		} else if recursive && fileInfo.IsDir() {
-			imagesFoundCount = readAllImagesInDir(imagesFoundCount, utils.TranslatePath(path.Join(locationpath, fileInfo.Name())), outputDirectory, inputType, outputType, recursive)
+			go readAllImagesInDir(imagesFoundCount, utils.TranslatePath(path.Join(locationpath, fileInfo.Name())), outputDirectory, inputType, outputType, recursive, ric)
 		}
 	}
 	return imagesFoundCount
