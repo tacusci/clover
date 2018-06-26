@@ -63,7 +63,7 @@ func runTool(toolFlag string) {
 		outputType := flag.String("ot", "", "Extension of image type to output to.")
 		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
 		setLoggingLevel()
-		logging.OutputDateTime, logging.OutputPath = false, false
+		logging.OutputDateTime, logging.OutputPath, logging.OutputLogLevelFlag, logging.OutputArrowSuffix = false, false, false, false
 		flag.Parse()
 
 		cltools.RunRtc(*sourceDirectory, *outputDirectory, *inputType, *outputType, *recursive)
