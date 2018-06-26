@@ -651,9 +651,11 @@ type tiffIFD struct {
 }
 
 type rawImage struct {
-	File   *os.File
-	header tiffHeader
-	ifds   []tiffIFD
+	File           *os.File
+	header         tiffHeader
+	ifds           []tiffIFD
+	compressedData []byte
+	data           []byte
 }
 
 func (ri *rawImage) Load() error {
@@ -704,6 +706,10 @@ func (ri *rawImage) Load() error {
 	logging.Info(fmt.Sprintf("SUBIFD1 - CFA Repeat pattern dim -> %d", subIFD1.CFARepeatPatternDim))
 	logging.Info(fmt.Sprintf("SUBIFD1 - CFA pattern 2 -> %d", subIFD1.CFAPattern2))
 	logging.Info(fmt.Sprintf("SUBIFD1 - Sensing method -> %d", subIFD1.SensingMethod))
+
+	ri.compressedData = make([]byte, subIFD0.JpegFromRawLength)
+	ri.File.Seek(int64(subIFD0.JpegFromRawStart), os.SEEK_SET)
+	ri.File.Read(ri.compressedData)
 
 	return nil
 }
@@ -764,16 +770,16 @@ func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirecto
 	return imagesFoundCount
 }
 
-func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader) tiffIFD {
+func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
 	ifd := &tiffIFD{}
 	//for each byte in the IFD0
 	for i := range ifdData {
 		if math.Mod(float64(i), float64(12)) == 0 {
 			//get the tag value, it's two bytes long, so get byte we're on and second byte from offset
-			tagAsInt := utils.ConvertBytesToUInt16(ifdData[i], ifdData[i+1], imageTiffHeaderData.endianOrder)
-			dataFormatAsInt := utils.ConvertBytesToUInt16(ifdData[i+2], ifdData[i+3], imageTiffHeaderData.endianOrder)
-			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], imageTiffHeaderData.endianOrder)
-			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifdData[i+8], ifdData[i+9], ifdData[i+10], ifdData[i+11], imageTiffHeaderData.endianOrder)
+			tagAsInt := utils.ConvertBytesToUInt16(ifdData[i], ifdData[i+1], tiffHeaderData.endianOrder)
+			dataFormatAsInt := utils.ConvertBytesToUInt16(ifdData[i+2], ifdData[i+3], tiffHeaderData.endianOrder)
+			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], tiffHeaderData.endianOrder)
+			dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifdData[i+8], ifdData[i+9], ifdData[i+10], ifdData[i+11], tiffHeaderData.endianOrder)
 
 			switch tagAsInt {
 			case subfileTypeTag:
@@ -815,7 +821,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 				}
 			case compressionTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					imageCompressionValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					imageCompressionValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					if imageCompressionValue == compressionNone {
 						logging.Debug(fmt.Sprintf("Compression -> None"))
 					}
@@ -823,7 +829,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 				}
 			case photometricInterpretationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					photometricInterpretationValue := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					if photometricInterpretationValue == photometricInterpretationRGB {
 						logging.Debug(fmt.Sprintf("Photometric interpretation -> RGB"))
 					}
@@ -852,13 +858,13 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 				}
 			case orientationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					orientationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					orientationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Orientation flag -> %d", orientationTagData))
 					ifd.OrientationFlag = orientationTagData
 				}
 			case samplesPerPixelTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					samplesPerPixelTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					samplesPerPixelTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Samples per pixel flag -> %d", samplesPerPixelTagData))
 					ifd.SamplesPerPixel = samplesPerPixelTagData
 				}
@@ -884,13 +890,13 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 				}
 			case planarConfigurationTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					planarConfigurationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					planarConfigurationTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Planar configuration -> %d", planarConfigurationTagData))
 					ifd.PlanarConfiguration = planarConfigurationTagData
 				}
 			case resolutionUnitTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					resolutionUnitTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					resolutionUnitTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Resolution unit -> %d", resolutionUnitTagData))
 					ifd.ResolutionUnit = resolutionUnitTagData
 				}
@@ -928,7 +934,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					start := 0
 					end := 4
 					for ; i < numOfElementsAsInt; i++ {
-						ifd.SubIFDOffsets = append(ifd.SubIFDOffsets, utils.ConvertBytesSliceToUInt32(subIfdDataOffsetData[start:end], imageTiffHeaderData.endianOrder))
+						ifd.SubIFDOffsets = append(ifd.SubIFDOffsets, utils.ConvertBytesSliceToUInt32(subIfdDataOffsetData[start:end], tiffHeaderData.endianOrder))
 						start += 4
 						end += 4
 					}
@@ -943,7 +949,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					referenceBlackWhiteTagInt := utils.ConvertBytesToUInt64(referenceBlackWhiteTagData[0], referenceBlackWhiteTagData[1],
 						referenceBlackWhiteTagData[2], referenceBlackWhiteTagData[3],
 						referenceBlackWhiteTagData[4], referenceBlackWhiteTagData[5],
-						referenceBlackWhiteTagData[6], referenceBlackWhiteTagData[7], imageTiffHeaderData.endianOrder)
+						referenceBlackWhiteTagData[6], referenceBlackWhiteTagData[7], tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("Reference black white tag -> %d", referenceBlackWhiteTagInt))
 					ifd.ReferenceBlackWhite = referenceBlackWhiteTagInt
 				}
@@ -985,7 +991,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 				}
 			case yCbCrPositioningTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
-					yCbCrPositioningTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					yCbCrPositioningTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
 					ifd.YCbCrPositioning = yCbCrPositioningTagData
 				}
 			}
