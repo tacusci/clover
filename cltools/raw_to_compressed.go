@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/tacusci/logging"
 
@@ -671,6 +672,8 @@ func (ri *rawImage) Load() error {
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
 
+	logging.Info(fmt.Sprintf("%d IFDs", len(ri.ifds)))
+
 	// subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
 	// subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
 
@@ -721,11 +724,10 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 		os.Exit(1)
 	}
 
-	rawImageChannel := make(chan rawImage, 100)
-	rawImages := make([]rawImage, 0)
-
 	if isDir, err := isDirectory(locationpath); isDir {
-		convertImagesInDir(locationpath, inputType, recursive)
+		var wg sync.WaitGroup
+		convertImagesInDir(&wg, locationpath, inputType, recursive)
+		wg.Wait()
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
@@ -733,37 +735,30 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 	}
 }
 
-func convertImagesInDir(locationPath string, inputType string, recursive bool) {
-
-}
-
-func loadImages(locationPath string, inputType string, recursive bool, rawImageChannel chan rawImage) {
-	filesInDir, err := ioutil.ReadDir(locationPath)
+func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, recursive bool) {
+	wg.Add(1)
+	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
 		logging.Error(err.Error())
 	}
-	for i := range filesInDir {
-		file := filesInDir[i]
+	for i := range files {
+		file := files[i]
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
-			filename := utils.TranslatePath(path.Join(locationPath, file.Name()))
-
-			imageFile, err := os.Open(filename)
-			defer imageFile.Close()
-
+			image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
 			if err != nil {
-				logging.ErrorAndExit(err.Error())
+				logging.Error(err.Error())
 			}
-
 			ri := &rawImage{
-				File: imageFile,
+				File: image,
 			}
-
-			rawImageChannel <- *ri
+			go ri.Load()
+		} else {
+			if file.IsDir() && recursive {
+				go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive)
+			}
 		}
-		//  else if file.IsDir() && recursive {
-		// 	go loadImages(utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive, rawImageChannel)
-		// }
 	}
+	wg.Done()
 }
 
 func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirectory string, inputType string, outputType string, recursive bool, ric chan rawImage) int {
