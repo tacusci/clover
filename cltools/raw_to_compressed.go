@@ -671,45 +671,45 @@ func (ri *rawImage) Load() error {
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
 
-	subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
-	subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
+	// subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
+	// subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
 
-	fmt.Println()
+	// fmt.Println()
 
-	logging.Info(fmt.Sprintf("SUBIFD0 - Subfile type -> 1"))
-	logging.Info(fmt.Sprintf("SUBIFD0 - Compression -> %d", subIFD0.CompressionFlag))
-	logging.Info(fmt.Sprintf("SUBIFD0 - X Resolution -> %d", subIFD0.XResolution))
-	logging.Info(fmt.Sprintf("SUBIFD0 - Y Resolution -> %d", subIFD0.YResolution))
-	logging.Info(fmt.Sprintf("SUBIFD0 - Resolution unit -> %d", subIFD0.ResolutionUnit))
-	logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
-	logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
-	logging.Info(fmt.Sprintf("SUBIFD0 - YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - Subfile type -> 1"))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - Compression -> %d", subIFD0.CompressionFlag))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - X Resolution -> %d", subIFD0.XResolution))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - Y Resolution -> %d", subIFD0.YResolution))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - Resolution unit -> %d", subIFD0.ResolutionUnit))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
+	// logging.Info(fmt.Sprintf("SUBIFD0 - YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
 
-	fmt.Println()
+	// fmt.Println()
 
-	subIFD1Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[1], ri.header.endianOrder)
-	subIFD1 := parseIFDBytes(ri.File, subIFD1Bytes, ri.header)
+	// subIFD1Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[1], ri.header.endianOrder)
+	// subIFD1 := parseIFDBytes(ri.File, subIFD1Bytes, ri.header)
 
-	logging.Info(fmt.Sprintf("SUBIFD1 - Subfile type -> 0"))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Image width -> %d", subIFD1.ImageWidth))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Image height -> %d", subIFD1.ImageHeight))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Bits per sample -> %d", subIFD1.BitsPerSample))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Compression -> %d", subIFD1.CompressionFlag))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Photometric interpretation -> %d", subIFD1.PhotometricInterpretationFlag))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw start -> %d", subIFD1.JpegFromRawStart))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw length -> %d", subIFD1.JpegFromRawLength))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Samples per pixel -> %d", subIFD1.SamplesPerPixel))
-	logging.Info(fmt.Sprintf("SUBIFD1 - X Resolution -> %d", subIFD1.XResolution))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Y Resolution -> %d", subIFD1.YResolution))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Planar configuration -> %d", subIFD1.PlanarConfiguration))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Resolution unit -> %d", subIFD1.ResolutionUnit))
-	logging.Info(fmt.Sprintf("SUBIFD1 - CFA Repeat pattern dim -> %d", subIFD1.CFARepeatPatternDim))
-	logging.Info(fmt.Sprintf("SUBIFD1 - CFA pattern 2 -> %d", subIFD1.CFAPattern2))
-	logging.Info(fmt.Sprintf("SUBIFD1 - Sensing method -> %d", subIFD1.SensingMethod))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Subfile type -> 0"))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Image width -> %d", subIFD1.ImageWidth))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Image height -> %d", subIFD1.ImageHeight))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Bits per sample -> %d", subIFD1.BitsPerSample))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Compression -> %d", subIFD1.CompressionFlag))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Photometric interpretation -> %d", subIFD1.PhotometricInterpretationFlag))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw start -> %d", subIFD1.JpegFromRawStart))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw length -> %d", subIFD1.JpegFromRawLength))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Samples per pixel -> %d", subIFD1.SamplesPerPixel))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - X Resolution -> %d", subIFD1.XResolution))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Y Resolution -> %d", subIFD1.YResolution))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Planar configuration -> %d", subIFD1.PlanarConfiguration))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Resolution unit -> %d", subIFD1.ResolutionUnit))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - CFA Repeat pattern dim -> %d", subIFD1.CFARepeatPatternDim))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - CFA pattern 2 -> %d", subIFD1.CFAPattern2))
+	// logging.Info(fmt.Sprintf("SUBIFD1 - Sensing method -> %d", subIFD1.SensingMethod))
 
-	ri.compressedData = make([]byte, subIFD0.JpegFromRawLength)
-	ri.File.Seek(int64(subIFD0.JpegFromRawStart), os.SEEK_SET)
-	ri.File.Read(ri.compressedData)
+	// ri.compressedData = make([]byte, subIFD0.JpegFromRawLength)
+	// ri.File.Seek(int64(subIFD0.JpegFromRawStart), os.SEEK_SET)
+	// ri.File.Read(ri.compressedData)
 
 	return nil
 }
@@ -721,15 +721,48 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 		os.Exit(1)
 	}
 
-	ric := make(chan rawImage)
-	ris := make([]rawImage, 0)
+	rawImageChannel := make(chan rawImage, 100)
+	rawImages := make([]rawImage, 0)
 
-	if isDir, _ := isDirectory(locationpath); isDir {
-		var imagesFoundCount int
-		go readAllImagesInDir(imagesFoundCount, locationpath, outputDirectory, inputType, outputType, recursive, ric)
-		ri := <-ric
-		ris = append(ris, ri)
-		logging.Info(fmt.Sprintf("Finished running... Found %d images", len(ris)))
+	if isDir, err := isDirectory(locationpath); isDir {
+		convertImagesInDir(locationpath, inputType, recursive)
+	} else {
+		if err != nil {
+			logging.ErrorAndExit(err.Error())
+		}
+	}
+}
+
+func convertImagesInDir(locationPath string, inputType string, recursive bool) {
+
+}
+
+func loadImages(locationPath string, inputType string, recursive bool, rawImageChannel chan rawImage) {
+	filesInDir, err := ioutil.ReadDir(locationPath)
+	if err != nil {
+		logging.Error(err.Error())
+	}
+	for i := range filesInDir {
+		file := filesInDir[i]
+		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
+			filename := utils.TranslatePath(path.Join(locationPath, file.Name()))
+
+			imageFile, err := os.Open(filename)
+			defer imageFile.Close()
+
+			if err != nil {
+				logging.ErrorAndExit(err.Error())
+			}
+
+			ri := &rawImage{
+				File: imageFile,
+			}
+
+			rawImageChannel <- *ri
+		}
+		//  else if file.IsDir() && recursive {
+		// 	go loadImages(utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive, rawImageChannel)
+		// }
 	}
 }
 
