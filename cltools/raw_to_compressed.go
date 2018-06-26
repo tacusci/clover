@@ -642,6 +642,9 @@ type nefIFD struct {
 	GpsInfo                       uint32
 	DateTimeOriginalText          []byte
 	TiffEPStandardID              []byte
+	JpegFromRawStart              uint32
+	JpegFromRawLength             uint32
+	YCbCrPositioning              uint16
 }
 
 type rawImage struct {
@@ -662,6 +665,13 @@ func (ri *rawImage) Load() error {
 	ifd0Bytes := readIFDBytes(ri.File, ri.header.tiffOffset, ri.header.endianOrder)
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
+
+	subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
+	subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
+
+	logging.Info(fmt.Sprintf("JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
+	logging.Info(fmt.Sprintf("JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
+	logging.Info(fmt.Sprintf("YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
 
 	return nil
 }
@@ -932,6 +942,19 @@ func parseIFDBytes(file *os.File, ifdData []byte, imageTiffHeaderData tiffHeader
 					file.Read(tiffEPStandardIDTagData)
 					logging.Debug(fmt.Sprintf("Tiff EP Standard tag: %d", tiffEPStandardIDTagData))
 					ifd.TiffEPStandardID = tiffEPStandardIDTagData
+				}
+			case jpegFromRawStartTag:
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					ifd.JpegFromRawStart = dataValueOrDataOffsetAsInt
+				}
+			case jpegFromRawLengthTag:
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					ifd.JpegFromRawLength = dataValueOrDataOffsetAsInt
+				}
+			case yCbCrPositioningTag:
+				if uint8(dataFormatAsInt) == unsignedShortType {
+					yCbCrPositioningTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], imageTiffHeaderData.endianOrder)
+					ifd.YCbCrPositioning = yCbCrPositioningTagData
 				}
 			}
 		}
