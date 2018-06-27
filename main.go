@@ -62,11 +62,13 @@ func runTool(toolFlag string) {
 		inputType := flag.String("it", "", "Extension of image type to convert.")
 		outputType := flag.String("ot", "", "Extension of image type to output to.")
 		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
-		setLoggingLevel()
+		noConcurrency := flag.Bool("nc", false, "Disable concurrency/threading.")
 		logging.OutputDateTime, logging.OutputPath, logging.OutputLogLevelFlag, logging.OutputArrowSuffix = false, false, false, false
+		setLoggingLevel()
+
 		flag.Parse()
 
-		cltools.RunRtc(*sourceDirectory, *outputDirectory, *inputType, *outputType, *recursive)
+		cltools.RunRtc(*sourceDirectory, *outputDirectory, *inputType, *outputType, *noConcurrency, *recursive)
 	} else {
 		outputUsageAndClose()
 	}

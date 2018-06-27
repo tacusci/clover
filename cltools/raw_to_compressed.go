@@ -718,7 +718,7 @@ func (ri *rawImage) Load() error {
 }
 
 //RunRtc runs the raw to compressed image conversion tool
-func RunRtc(locationpath string, outputDirectory string, inputType string, outputType string, recursive bool) {
+func RunRtc(locationpath string, outputDirectory string, inputType string, outputType string, noConcurrency bool, recursive bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -726,8 +726,10 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 	st := time.Now()
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
-		convertImagesInDir(&wg, locationpath, inputType, outputType, recursive)
-		wg.Wait()
+		convertImagesInDir(&wg, locationpath, inputType, outputType, noConcurrency, recursive)
+		if !noConcurrency {
+			wg.Wait()
+		}
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
@@ -736,7 +738,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 	logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 }
 
-func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, recursive bool) {
+func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, noConcurrency bool, recursive bool) {
 	wg.Add(1)
 	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
@@ -754,10 +756,18 @@ func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType strin
 			ri := &rawImage{
 				File: image,
 			}
-			go convertToCompressed(wg, ri, outputType)
+			if !noConcurrency {
+				go convertToCompressed(wg, ri, outputType)
+			} else {
+				convertToCompressed(wg, ri, outputType)
+			}
 		} else {
 			if file.IsDir() && recursive {
-				go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, recursive)
+				if !noConcurrency {
+					go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
+				} else {
+					convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
+				}
 			}
 		}
 	}
