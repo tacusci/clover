@@ -736,6 +736,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 
 func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, recursive bool) {
 	wg.Add(1)
+	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
 		logging.Error(err.Error())
@@ -744,20 +745,20 @@ func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType strin
 		file := files[i]
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
 			image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
+			defer image.Close()
 			if err != nil {
 				logging.Error(err.Error())
 			}
 			ri := &rawImage{
 				File: image,
 			}
-			go convertToCompressed(ri, outputType)
+			go convertToCompressed(wg, ri, outputType)
 		} else {
 			if file.IsDir() && recursive {
 				go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, recursive)
 			}
 		}
 	}
-	wg.Done()
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
@@ -1041,7 +1042,9 @@ func parseHeaderBytes(header []byte) (tiffHeader, error) {
 	return *tiffData, nil
 }
 
-func convertToCompressed(ri *rawImage, outputType string) {
+func convertToCompressed(wg *sync.WaitGroup, ri *rawImage, outputType string) {
+	wg.Add(1)
+	defer wg.Done()
 	switch strings.ToLower(outputType) {
 	case ".jpg":
 		convertToJPEG(ri)
