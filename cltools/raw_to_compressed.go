@@ -690,12 +690,15 @@ func (ri *rawImage) Load() error {
 }
 
 //RunRtc runs the raw to compressed image conversion tool
-func RunRtc(locationpath string, outputDirectory string, inputType string, outputType string, noConcurrency bool, recursive bool) {
+func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, noConcurrency bool, recursive bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	st := time.Now()
+	var st time.Time
+	if timeStamp {
+		st = time.Now()
+	}
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
 		convertImagesInDir(&wg, locationpath, inputType, outputType, noConcurrency, recursive)
@@ -707,7 +710,9 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 			logging.ErrorAndExit(err.Error())
 		}
 	}
-	logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
+	if timeStamp {
+		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
+	}
 }
 
 func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, noConcurrency bool, recursive bool) {
