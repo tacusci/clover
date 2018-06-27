@@ -672,7 +672,7 @@ func (ri *rawImage) Load() error {
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
 
-	logging.Info(fmt.Sprintf("%d IFDs", len(ri.ifds)))
+	//logging.Info(fmt.Sprintf("%d IFDs", len(ri.ifds)))
 
 	// subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
 	// subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
@@ -1055,6 +1055,7 @@ func convertToCompressed(wg *sync.WaitGroup, ri *rawImage, outputType string) {
 
 func convertToJPEG(ri *rawImage) {
 	logging.Info(fmt.Sprintf("Converting %s to JPEG", ri.File.Name()))
+	ri.Load()
 }
 
 func getEdianOrder(header []byte) utils.EndianOrder {
