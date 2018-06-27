@@ -668,8 +668,7 @@ type rawImage struct {
 }
 
 func (ri *rawImage) Load() error {
-	fmt.Println()
-	logging.Debug(fmt.Sprintf("Parsing %s image data", ri.File.Name()))
+	logging.Debug(fmt.Sprintf("\nParsing %s image data", ri.File.Name()))
 	headerBytes, err := readHeaderBytes(ri.File)
 	if err != nil {
 		return err
@@ -679,58 +678,14 @@ func (ri *rawImage) Load() error {
 		return err
 	}
 	ifd0Bytes := readIFDBytes(ri.File, ri.header.tiffOffset, ri.header.endianOrder)
-	logging.Debug("Parsing IFD0:\n")
+	logging.Debug("Parsing IFD0:")
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
 
 	for i := 0; i < len(ifd0.SubIFDOffsets); i++ {
-		fmt.Println()
-		logging.Debug(fmt.Sprintf("Parsing SubIFD%d:", i))
+		logging.Debug(fmt.Sprintf("\nParsing SubIFD%d:", i))
 		ri.ifds = append(ri.ifds, parseIFDBytes(ri.File, readIFDBytes(ri.File, ifd0.SubIFDOffsets[i], ri.header.endianOrder), ri.header))
 	}
-
-	//logging.Info(fmt.Sprintf("%d IFDs", len(ri.ifds)))
-
-	// subIFD0Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[0], ri.header.endianOrder)
-	// subIFD0 := parseIFDBytes(ri.File, subIFD0Bytes, ri.header)
-
-	// fmt.Println()
-
-	// logging.Info(fmt.Sprintf("SUBIFD0 - Subfile type -> 1"))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - Compression -> %d", subIFD0.CompressionFlag))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - X Resolution -> %d", subIFD0.XResolution))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - Y Resolution -> %d", subIFD0.YResolution))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - Resolution unit -> %d", subIFD0.ResolutionUnit))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data location -> %d", subIFD0.JpegFromRawStart))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - JPG lossy compressed data length -> %d", subIFD0.JpegFromRawLength))
-	// logging.Info(fmt.Sprintf("SUBIFD0 - YCbCrPositioning -> %d", subIFD0.YCbCrPositioning))
-
-	// fmt.Println()
-
-	// subIFD1Bytes := readIFDBytes(ri.File, ifd0.SubIFDOffsets[1], ri.header.endianOrder)
-	// subIFD1 := parseIFDBytes(ri.File, subIFD1Bytes, ri.header)
-
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Subfile type -> 0"))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Image width -> %d", subIFD1.ImageWidth))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Image height -> %d", subIFD1.ImageHeight))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Bits per sample -> %d", subIFD1.BitsPerSample))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Compression -> %d", subIFD1.CompressionFlag))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Photometric interpretation -> %d", subIFD1.PhotometricInterpretationFlag))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw start -> %d", subIFD1.JpegFromRawStart))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Jpg from raw length -> %d", subIFD1.JpegFromRawLength))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Samples per pixel -> %d", subIFD1.SamplesPerPixel))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - X Resolution -> %d", subIFD1.XResolution))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Y Resolution -> %d", subIFD1.YResolution))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Planar configuration -> %d", subIFD1.PlanarConfiguration))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Resolution unit -> %d", subIFD1.ResolutionUnit))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - CFA Repeat pattern dim -> %d", subIFD1.CFARepeatPatternDim))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - CFA pattern 2 -> %d", subIFD1.CFAPattern2))
-	// logging.Info(fmt.Sprintf("SUBIFD1 - Sensing method -> %d", subIFD1.SensingMethod))
-
-	// ri.compressedData = make([]byte, subIFD0.JpegFromRawLength)
-	// ri.File.Seek(int64(subIFD0.JpegFromRawStart), os.SEEK_SET)
-	// ri.File.Read(ri.compressedData)
-
 	return nil
 }
 
@@ -1007,15 +962,18 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 				}
 			case jpegFromRawStartTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
+					logging.Debug(fmt.Sprintf("JPEG raw start: %d", dataValueOrDataOffsetAsInt))
 					ifd.JpegFromRawStart = dataValueOrDataOffsetAsInt
 				}
 			case jpegFromRawLengthTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
+					logging.Debug(fmt.Sprintf("JPEG raw length: %d", dataValueOrDataOffsetAsInt))
 					ifd.JpegFromRawLength = dataValueOrDataOffsetAsInt
 				}
 			case yCbCrPositioningTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
 					yCbCrPositioningTagData := utils.ConvertBytesToUInt16(ifdData[i+8], ifdData[i+9], tiffHeaderData.endianOrder)
+					logging.Debug(fmt.Sprintf("YCbCr Positioning: %d", yCbCrPositioningTagData))
 					ifd.YCbCrPositioning = yCbCrPositioningTagData
 				}
 			}
