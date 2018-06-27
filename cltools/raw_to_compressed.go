@@ -1054,7 +1054,6 @@ func convertToCompressed(wg *sync.WaitGroup, ri *rawImage, outputType string) {
 }
 
 func convertToJPEG(ri *rawImage) {
-	logging.Info(fmt.Sprintf("Converting %s to JPEG", ri.File.Name()))
 	ri.Load()
 }
 
