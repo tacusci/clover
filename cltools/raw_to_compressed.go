@@ -610,7 +610,14 @@ const (
 	compressionADOBEDEFLATE        uint16 = 8
 	compressionJBIGOnBlackAndWhite uint16 = 9
 	compressionJBIGOnColor         uint16 = 10
+
+	subfileTypeReducedResolutionImage     subfileType = 1
+	subfileTypeSinglePageOfMultipageImage subfileType = 2
+	subfileTypeTransparencyMaskImage      subfileType = 3
+	subfileTypeMRCImagingModel            subfileType = 4
 )
+
+type subfileType uint8
 
 type tiffHeader struct {
 	endianOrder utils.EndianOrder
@@ -619,6 +626,7 @@ type tiffHeader struct {
 }
 
 type tiffIFD struct {
+	SubFileType                   subfileType
 	ImageWidth                    uint32
 	ImageHeight                   uint32
 	BitsPerSample                 []byte
@@ -660,6 +668,8 @@ type rawImage struct {
 }
 
 func (ri *rawImage) Load() error {
+	fmt.Println()
+	logging.Debug(fmt.Sprintf("Parsing %s image data", ri.File.Name()))
 	headerBytes, err := readHeaderBytes(ri.File)
 	if err != nil {
 		return err
@@ -669,8 +679,15 @@ func (ri *rawImage) Load() error {
 		return err
 	}
 	ifd0Bytes := readIFDBytes(ri.File, ri.header.tiffOffset, ri.header.endianOrder)
+	logging.Debug("Parsing IFD0:\n")
 	ifd0 := parseIFDBytes(ri.File, ifd0Bytes, ri.header)
 	ri.ifds = append(ri.ifds, ifd0)
+
+	for i := 0; i < len(ifd0.SubIFDOffsets); i++ {
+		fmt.Println()
+		logging.Debug(fmt.Sprintf("Parsing SubIFD%d:", i))
+		ri.ifds = append(ri.ifds, parseIFDBytes(ri.File, readIFDBytes(ri.File, ifd0.SubIFDOffsets[i], ri.header.endianOrder), ri.header))
+	}
 
 	//logging.Info(fmt.Sprintf("%d IFDs", len(ri.ifds)))
 
@@ -795,12 +812,16 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 
 						if firstBitFlag == 1 {
 							logging.Debug(fmt.Sprintf("Image type is -> Reduced resolution image"))
+							ifd.SubFileType = subfileTypeReducedResolutionImage
 						} else if secondBitFlag == 1 {
 							logging.Debug(fmt.Sprintf("Image type is -> Single page of multipage image"))
+							ifd.SubFileType = subfileTypeSinglePageOfMultipageImage
 						} else if thirdBitFlag == 1 {
 							logging.Debug(fmt.Sprintf("Image type is -> Transparency mask image"))
+							ifd.SubFileType = subfileTypeTransparencyMaskImage
 						} else if fourthBitFlag == 1 {
-							logging.Debug(fmt.Sprintf("MRC imaging model?"))
+							logging.Debug(fmt.Sprintf("Image type is -> MRC imaging model?"))
+							ifd.SubFileType = subfileTypeMRCImagingModel
 						}
 					}
 				}
