@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"os"
 	"path"
@@ -759,50 +758,6 @@ func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType strin
 		}
 	}
 	wg.Done()
-}
-
-func readAllImagesInDir(imagesFoundCount int, locationpath string, outputDirectory string, inputType string, outputType string, recursive bool, ric chan rawImage) int {
-
-	fileInfos, err := ioutil.ReadDir(locationpath)
-
-	if err != nil {
-		log.Fatal(err)
-		return imagesFoundCount
-	}
-
-	for i := range fileInfos {
-		fileInfo := fileInfos[i]
-
-		if !fileInfo.IsDir() && strings.HasSuffix(strings.ToLower(fileInfo.Name()), strings.ToLower(inputType)) {
-			filename := path.Join(locationpath, fileInfo.Name())
-			filename = utils.TranslatePath(filename)
-			imageFile, err := os.Open(filename)
-
-			if err != nil {
-				log.Fatal(err)
-				return imagesFoundCount
-			}
-
-			logging.Info(fmt.Sprintf("Reading image %s", filename))
-			ritc := &rawImage{
-				File: imageFile,
-			}
-
-			err = ritc.Load()
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			imagesFoundCount++
-			imageFile.Close()
-
-			ric <- *ritc
-		} else if recursive && fileInfo.IsDir() {
-			go readAllImagesInDir(imagesFoundCount, utils.TranslatePath(path.Join(locationpath, fileInfo.Name())), outputDirectory, inputType, outputType, recursive, ric)
-		}
-	}
-	return imagesFoundCount
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
