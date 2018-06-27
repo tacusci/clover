@@ -10,6 +10,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/tacusci/logging"
 
@@ -722,7 +723,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-
+	st := time.Now()
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
 		convertImagesInDir(&wg, locationpath, inputType, outputType, recursive)
@@ -732,6 +733,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 			logging.ErrorAndExit(err.Error())
 		}
 	}
+	logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 }
 
 func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, recursive bool) {
