@@ -726,7 +726,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
-		convertImagesInDir(&wg, locationpath, inputType, recursive)
+		convertImagesInDir(&wg, locationpath, inputType, outputType, recursive)
 		wg.Wait()
 	} else {
 		if err != nil {
@@ -735,7 +735,7 @@ func RunRtc(locationpath string, outputDirectory string, inputType string, outpu
 	}
 }
 
-func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, recursive bool) {
+func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, recursive bool) {
 	wg.Add(1)
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
@@ -751,10 +751,10 @@ func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType strin
 			ri := &rawImage{
 				File: image,
 			}
-			go ri.Load()
+			go convertToCompressed(ri, outputType)
 		} else {
 			if file.IsDir() && recursive {
-				go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive)
+				go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, recursive)
 			}
 		}
 	}
@@ -1084,6 +1084,17 @@ func parseHeaderBytes(header []byte) (tiffHeader, error) {
 		return *tiffData, errors.New("Header incorrect length")
 	}
 	return *tiffData, nil
+}
+
+func convertToCompressed(ri *rawImage, outputType string) {
+	switch strings.ToLower(outputType) {
+	case ".jpg":
+		convertToJPEG(ri)
+	}
+}
+
+func convertToJPEG(ri *rawImage) {
+	logging.Info(fmt.Sprintf("Converting %s to JPEG", ri.File.Name()))
 }
 
 func getEdianOrder(header []byte) utils.EndianOrder {
