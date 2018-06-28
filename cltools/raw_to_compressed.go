@@ -574,6 +574,39 @@ const (
 	smoothnessTag                    uint16 = 0xfe57
 	moireFilterTag                   uint16 = 0xfe58
 
+	GPSVersionID         uint16 = 0x0000
+	GPSLatitudeRef       uint16 = 0x0001
+	GPSLatitude          uint16 = 0x0002
+	GPSLongitudeRef      uint16 = 0x0003
+	GPSLongitude         uint16 = 0x0004
+	GPSAltitudeRef       uint16 = 0x0005
+	GPSAltitude          uint16 = 0x0006
+	GPSTimeStamp         uint16 = 0x0007
+	GPSSatellites        uint16 = 0x0008
+	GPSStatus            uint16 = 0x0009
+	GPSMeasureMode       uint16 = 0x000a
+	GPSDOP               uint16 = 0x000b
+	GPSSpeedRef          uint16 = 0x000c
+	GPSSpeed             uint16 = 0x000d
+	GPSTrackRef          uint16 = 0x000e
+	GPSTrack             uint16 = 0x000f
+	GPSImgDirectionRef   uint16 = 0x0010
+	GPSImgDirection      uint16 = 0x0011
+	GPSMapDatum          uint16 = 0x0012
+	GPSDestLatitiudeRef  uint16 = 0x0013
+	GPSDestLatitiude     uint16 = 0x0014
+	GPSDestLongitudeRef  uint16 = 0x0015
+	GPSDestLongitude     uint16 = 0x0016
+	GPSDestBearingRef    uint16 = 0x0017
+	GPSDestBearing       uint16 = 0x0018
+	GPSDestDistanceRef   uint16 = 0x0019
+	GPSDestDistance      uint16 = 0x001a
+	GPSProcessingMethod  uint16 = 0x001b
+	GPSAreaInformation   uint16 = 0x001c
+	GPSDateStamp         uint16 = 0x001d
+	GPSDifferential      uint16 = 0x001e
+	GPSHPositioningError uint16 = 0x001f
+
 	unsignedByteType     uint8 = 1  //is 1 byte in size
 	asciiStringsType     uint8 = 2  //ASCII strings, always a 1 byte long pointer
 	unsignedShortType    uint8 = 3  //is 2 bytes in size
@@ -659,6 +692,26 @@ type tiffIFD struct {
 	CFARepeatPatternDim           uint16
 	CFAPattern2                   uint8
 	SensingMethod                 uint16
+}
+
+type GPSIFD struct {
+	GPSVersionID       [4]uint8
+	GPSLatitudeRef     [2]string
+	GPSLatitude        [3]uint64
+	GPSLongitudeRef    [2]string
+	GPSLongitude       [3]uint64
+	GPSAltitude        uint64
+	GPSTimeStamp       [3]uint64
+	GPSSatellites      string
+	GPSStatus          [2]string
+	GPSMeasureMode     [2]string
+	GPSDOP             uint64
+	GPSSpeedRef        [2]string
+	GPSSpeed           uint64
+	GPSTrackRef        [2]string
+	GPSTrack           uint16
+	GPSImgDirectionRef [2]string
+	GPSImgDirection    uint64
 }
 
 type rawImage struct {
@@ -956,10 +1009,7 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 				}
 			case gpsInfoTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
-					//file.Seek(dataValueOrDataOffsetAsInt)
-					//gpsInfoTagData :=
-					logging.Debug(fmt.Sprintf("GPS Info -> %d", dataValueOrDataOffsetAsInt))
-					ifd.GpsInfo = dataValueOrDataOffsetAsInt
+					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 				}
 			case dateTimeOriginalTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
