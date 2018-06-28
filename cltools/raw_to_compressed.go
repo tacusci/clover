@@ -629,6 +629,8 @@ type tiffIFD struct {
 	SubFileType                   subfileType
 	ImageWidth                    uint32
 	ImageHeight                   uint32
+	ImageFullWidth                uint32
+	ImageFullHeight               uint32
 	BitsPerSample                 []byte
 	CompressionFlag               uint16
 	PhotometricInterpretationFlag uint16
@@ -794,6 +796,16 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					logging.Debug(fmt.Sprintf("Image height -> %d", dataValueOrDataOffsetAsInt))
 					ifd.ImageHeight = dataValueOrDataOffsetAsInt
+				}
+			case imageFullWidthTag:
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					logging.Debug(fmt.Sprintf("Image full width -> %d", dataValueOrDataOffsetAsInt))
+					ifd.ImageFullWidth = dataValueOrDataOffsetAsInt
+				}
+			case imageFullHeightTag:
+				if uint8(dataFormatAsInt) == unsignedLongType {
+					logging.Debug(fmt.Sprintf("Image full height -> %d", dataValueOrDataOffsetAsInt))
+					ifd.ImageFullHeight = dataValueOrDataOffsetAsInt
 				}
 			case bitsPerSampleTag:
 				if uint8(dataFormatAsInt) == unsignedShortType {
