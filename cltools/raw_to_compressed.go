@@ -611,12 +611,12 @@ const (
 	asciiStringsType     uint8 = 2  //ASCII strings, always a 1 byte long pointer
 	unsignedShortType    uint8 = 3  //is 2 bytes in size
 	unsignedLongType     uint8 = 4  //is 4 bytes in size
-	unsignedRationalType uint8 = 5  //is 8 bytes in size
+	unsignedRationalType uint8 = 5  //is 4 bytes in size
 	signedByteType       uint8 = 6  //is 1 bytes in size
 	undefinedType        uint8 = 7  //is 1 byte in size?
 	signedShortType      uint8 = 8  //is 2 bytes in size
 	signedLongType       uint8 = 9  //is 4 bytes in size
-	signedRationalType   uint8 = 10 //is 8 bytes in size
+	signedRationalType   uint8 = 10 //is 4 bytes in size
 	singleFloatType      uint8 = 11 //is 4 bytes in size
 	doubleFloatType      uint8 = 12 //is 8 bytes in size
 
@@ -684,6 +684,7 @@ type tiffIFD struct {
 	ReferenceBlackWhite           uint64
 	ExifOffset                    uint32
 	GpsInfo                       uint32
+	GpsIFD                        *gpsIFD
 	DateTimeOriginalText          []byte
 	TiffEPStandardID              []byte
 	JpegFromRawStart              uint32
@@ -694,7 +695,7 @@ type tiffIFD struct {
 	SensingMethod                 uint16
 }
 
-type GPSIFD struct {
+type gpsIFD struct {
 	GPSVersionID       [4]uint8
 	GPSLatitudeRef     [2]string
 	GPSLatitude        [3]uint64
@@ -1009,7 +1010,8 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 				}
 			case gpsInfoTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
-					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
+					gifdData := readIFDBytes(file, dataValueOrDataOffsetAsInt, tiffHeaderData.endianOrder)
+					ifd.GpsIFD = parseGPSIFDBytes(file, gifdData, tiffHeaderData)
 				}
 			case dateTimeOriginalTag:
 				if uint8(dataFormatAsInt) == asciiStringsType {
@@ -1047,6 +1049,25 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 		}
 	}
 	return *ifd
+}
+
+func parseGPSIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) *gpsIFD {
+	gifd := &gpsIFD{}
+	for i := range ifdData {
+		if math.Mod(float64(i), float64(12)) == 0 {
+			//get the tag value, it's two bytes long, so get byte we're on and second byte from offset
+			tagAsInt := utils.ConvertBytesToUInt16(ifdData[i], ifdData[i+1], tiffHeaderData.endianOrder)
+			// dataFormatAsInt := utils.ConvertBytesToUInt16(ifdData[i+2], ifdData[i+3], tiffHeaderData.endianOrder)
+			// numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], tiffHeaderData.endianOrder)
+			// dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifdData[i+8], ifdData[i+9], ifdData[i+10], ifdData[i+11], tiffHeaderData.endianOrder)
+
+			switch tagAsInt {
+			case GPSVersionID:
+				logging.Debug("GPS Version")
+			}
+		}
+	}
+	return gifd
 }
 
 func readIFDBytes(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder) []byte {
