@@ -101,3 +101,14 @@ func ConvertBytesToUInt64(byte1 byte, byte2 byte, byte3 byte, byte4 byte, byte5 
 	}
 	return resultInt
 }
+
+func ConvertBytesSliceToFloat32(btc []byte, eo EndianOrder) float32 {
+	if len(btc) != 4 {
+		return 0.0
+	}
+	return ConvertBytesToFloat32(btc[0], btc[1], btc[2], btc[3], eo)
+}
+
+func ConvertBytesToFloat32(byte1 byte, byte2 byte, byte3 byte, byte4 byte, endianOrder EndianOrder) float32 {
+	return 0.0
+}
