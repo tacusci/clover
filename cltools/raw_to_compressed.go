@@ -1011,6 +1011,8 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 			case gpsInfoTag:
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					gifdData := readIFDBytes(file, dataValueOrDataOffsetAsInt, tiffHeaderData.endianOrder)
+					logging.Debug(fmt.Sprintf("GPS SubIFD pointer -> %d", dataValueOrDataOffsetAsInt))
+					fmt.Printf("GPS IFD Bytes -> %x\n", gifdData)
 					ifd.GpsIFD = parseGPSIFDBytes(file, gifdData, tiffHeaderData)
 				}
 			case dateTimeOriginalTag:
@@ -1057,13 +1059,18 @@ func parseGPSIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) 
 		if math.Mod(float64(i), float64(12)) == 0 {
 			//get the tag value, it's two bytes long, so get byte we're on and second byte from offset
 			tagAsInt := utils.ConvertBytesToUInt16(ifdData[i], ifdData[i+1], tiffHeaderData.endianOrder)
-			// dataFormatAsInt := utils.ConvertBytesToUInt16(ifdData[i+2], ifdData[i+3], tiffHeaderData.endianOrder)
-			// numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], tiffHeaderData.endianOrder)
+			dataFormatAsInt := utils.ConvertBytesToUInt16(ifdData[i+2], ifdData[i+3], tiffHeaderData.endianOrder)
+			numOfElementsAsInt := utils.ConvertBytesToUInt32(ifdData[i+4], ifdData[i+5], ifdData[i+6], ifdData[i+7], tiffHeaderData.endianOrder)
 			// dataValueOrDataOffsetAsInt := utils.ConvertBytesToUInt32(ifdData[i+8], ifdData[i+9], ifdData[i+10], ifdData[i+11], tiffHeaderData.endianOrder)
 
 			switch tagAsInt {
 			case GPSVersionID:
-				logging.Debug("GPS Version")
+				if uint8(dataFormatAsInt) == unsignedByteType {
+					gpsVersionData := make([]byte, numOfElementsAsInt)
+					file.Seek(int64(i+8), os.SEEK_SET)
+					file.Read(gpsVersionData)
+					logging.Debug(fmt.Sprintf("GPS Version -> %x", gpsVersionData))
+				}
 			}
 		}
 	}
