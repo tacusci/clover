@@ -815,6 +815,25 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
+func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputType string) {
+	for {
+		if !<-*dsc {
+			ri := <-*itcc
+			switch strings.ToLower(outputType) {
+			case ".jpg":
+				convertToJPEG(ri)
+			}
+		} else {
+			break
+		}
+	}
+}
+
+func convertToJPEG(ri rawImage) {
+	ri.Load()
+	loadedRawImages = append(loadedRawImages, ri)
+}
+
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
 	ifd := &tiffIFD{}
 	//for each byte in the IFD0
@@ -1142,25 +1161,6 @@ func parseHeaderBytes(header []byte) (tiffHeader, error) {
 		return *tiffData, errors.New("Header incorrect length")
 	}
 	return *tiffData, nil
-}
-
-func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputType string) {
-	for {
-		if !<-*dsc {
-			ri := <-*itcc
-			switch strings.ToLower(outputType) {
-			case ".jpg":
-				convertToJPEG(ri)
-			}
-		} else {
-			break
-		}
-	}
-}
-
-func convertToJPEG(ri rawImage) {
-	ri.Load()
-	loadedRawImages = append(loadedRawImages, ri)
 }
 
 func getEdianOrder(header []byte) utils.EndianOrder {
