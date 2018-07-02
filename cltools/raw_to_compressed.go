@@ -758,7 +758,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		st = time.Now()
 	}
 
-	doneSearchingChan := make(chan bool)
+	doneSearchingChan := make(chan bool, 8)
 	imagesToConvertChan := make(chan rawImage, 8)
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
@@ -1015,7 +1015,6 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					gifdData := readIFDBytes(file, dataValueOrDataOffsetAsInt, tiffHeaderData.endianOrder)
 					logging.Debug(fmt.Sprintf("GPS SubIFD pointer -> %d", dataValueOrDataOffsetAsInt))
-					fmt.Printf("GPS IFD Bytes -> %x\n", gifdData)
 					ifd.GpsIFD = parseGPSIFDBytes(file, gifdData, tiffHeaderData)
 				}
 			case dateTimeOriginalTag:
