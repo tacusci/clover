@@ -759,7 +759,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 
 	doneSearchingChan := make(chan bool)
-	imagesToConvertChan := make(chan rawImage, 20)
+	imagesToConvertChan := make(chan rawImage, 8)
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
 		wg.Add(1)
