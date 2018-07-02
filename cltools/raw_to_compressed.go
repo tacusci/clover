@@ -723,7 +723,8 @@ type rawImage struct {
 	data           []byte
 }
 
-var imagesToConvertChan = make(chan rawImage, 100)
+var loadedRawImages []rawImage
+var imagesToConvertChan = make(chan rawImage, 20)
 
 func (ri *rawImage) Load() error {
 	logging.Debug(fmt.Sprintf("\nParsing %s image data", ri.File.Name()))
@@ -759,9 +760,9 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
-		wg.Add(2)
+		wg.Add(1)
+		go convertRawImagesToCompressed(outputType)
 		go findImagesInDir(&wg, locationpath, inputType, outputType, noConcurrency, recursive)
-		go convertRawImagesToCompressed(&wg, outputType)
 		wg.Wait()
 	} else {
 		if err != nil {
@@ -769,6 +770,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		}
 	}
 	close(imagesToConvertChan)
+	logging.Info(fmt.Sprintf("Found %d raw images to convert.", len(loadedRawImages)))
 	if timeStamp {
 		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 	}
@@ -780,6 +782,7 @@ func findImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, 
 	if err != nil {
 		logging.Error(err.Error())
 	}
+
 	for i := range files {
 		file := files[i]
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
@@ -792,6 +795,7 @@ func findImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, 
 				File: image,
 			}
 			imagesToConvertChan <- ri
+			logging.Info(fmt.Sprintf("FOUND IMAGE %s in loc %s", ri.File.Name(), locationPath))
 		} else {
 			if file.IsDir() && recursive {
 				wg.Add(1)
@@ -1131,18 +1135,19 @@ func parseHeaderBytes(header []byte) (tiffHeader, error) {
 	return *tiffData, nil
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, outputType string) {
-	defer wg.Done()
-	switch strings.ToLower(outputType) {
-	case ".jpg":
-		convertToJPEG()
+func convertRawImagesToCompressed(outputType string) {
+	for {
+		ri := <-imagesToConvertChan
+		switch strings.ToLower(outputType) {
+		case ".jpg":
+			convertToJPEG(ri)
+		}
 	}
 }
 
-func convertToJPEG() {
-	ri := <-imagesToConvertChan
-	logging.Debug(fmt.Sprintf("Converting %s to JPG", ri.File.Name()))
+func convertToJPEG(ri rawImage) {
 	ri.Load()
+	loadedRawImages = append(loadedRawImages, ri)
 }
 
 func getEdianOrder(header []byte) utils.EndianOrder {
