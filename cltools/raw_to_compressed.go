@@ -723,6 +723,8 @@ type rawImage struct {
 	data           []byte
 }
 
+var imagesToConvertChan = make(chan rawImage, 100)
+
 func (ri *rawImage) Load() error {
 	logging.Debug(fmt.Sprintf("\nParsing %s image data", ri.File.Name()))
 	headerBytes, err := readHeaderBytes(ri.File)
@@ -757,10 +759,10 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
-		convertImagesInDir(&wg, locationpath, inputType, outputType, noConcurrency, recursive)
-		if !noConcurrency {
-			wg.Wait()
-		}
+		wg.Add(2)
+		go findImagesInDir(&wg, locationpath, inputType, outputType, noConcurrency, recursive)
+		go convertRawImagesToCompressed(&wg, outputType)
+		wg.Wait()
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
@@ -771,8 +773,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 }
 
-func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, noConcurrency bool, recursive bool) {
-	wg.Add(1)
+func findImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, outputType string, noConcurrency bool, recursive bool) {
 	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
@@ -786,21 +787,15 @@ func convertImagesInDir(wg *sync.WaitGroup, locationPath string, inputType strin
 			if err != nil {
 				logging.Error(err.Error())
 			}
-			ri := &rawImage{
+			ri := rawImage{
 				File: image,
 			}
-			if !noConcurrency {
-				go convertToCompressed(wg, ri, outputType)
-			} else {
-				convertToCompressed(wg, ri, outputType)
-			}
+			logging.Debug(fmt.Sprintf("Found image: %s", ri.File.Name()))
+			imagesToConvertChan <- ri
 		} else {
 			if file.IsDir() && recursive {
-				if !noConcurrency {
-					go convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
-				} else {
-					convertImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
-				}
+				wg.Add(1)
+				findImagesInDir(wg, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
 			}
 		}
 	}
@@ -1136,16 +1131,16 @@ func parseHeaderBytes(header []byte) (tiffHeader, error) {
 	return *tiffData, nil
 }
 
-func convertToCompressed(wg *sync.WaitGroup, ri *rawImage, outputType string) {
-	wg.Add(1)
+func convertRawImagesToCompressed(wg *sync.WaitGroup, outputType string) {
 	defer wg.Done()
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		convertToJPEG(ri)
+		convertToJPEG()
 	}
 }
 
-func convertToJPEG(ri *rawImage) {
+func convertToJPEG() {
+	ri := <-imagesToConvertChan
 	ri.Load()
 }
 
