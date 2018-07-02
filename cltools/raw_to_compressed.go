@@ -759,14 +759,17 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 
 	doneSearchingChan := make(chan bool, 8)
+	doneConvertingChan := make(chan bool)
 	imagesToConvertChan := make(chan rawImage, 8)
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go findImagesInDir(&wg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
-		go convertRawImagesToCompressed(&imagesToConvertChan, &doneSearchingChan, outputType)
+		go convertRawImagesToCompressed(&imagesToConvertChan, &doneSearchingChan, &doneConvertingChan, outputType)
 		wg.Wait()
-		doneSearchingChan <- true
+		if <-doneConvertingChan {
+			doneSearchingChan <- true
+		}
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
@@ -814,7 +817,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputType string) {
+func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, dcc *chan bool, outputType string) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
@@ -822,6 +825,7 @@ func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputTyp
 			case ".jpg":
 				convertToJPEG(ri)
 			}
+			*dcc <- true
 		} else {
 			break
 		}
