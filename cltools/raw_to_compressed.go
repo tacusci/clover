@@ -829,11 +829,12 @@ func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputTyp
 }
 
 func convertToJPEG(ri rawImage) {
-	logging.Info(fmt.Sprintf("Converting image %s to JPEG", ri.File.Name()))
+	fmt.Printf("Converting image %s to .jpg", ri.File.Name())
 	err := ri.Load()
 	if err != nil {
-		logging.Error(fmt.Sprintf("Error parsing data -> '%s'", err.Error()))
+		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
 	} else {
+		logging.Info(" [SUCCESS]")
 		loadedRawImages = append(loadedRawImages, ri)
 	}
 	ri.File.Close()
