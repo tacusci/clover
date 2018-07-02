@@ -763,7 +763,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	if isDir, err := isDirectory(locationpath); isDir {
 		var wg sync.WaitGroup
 		wg.Add(1)
-		go findImagesInDir(&wg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, outputType, noConcurrency, recursive)
+		go findImagesInDir(&wg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
 		go convertRawImagesToCompressed(&imagesToConvertChan, &doneSearchingChan, outputType)
 		wg.Wait()
 		doneSearchingChan <- true
@@ -780,7 +780,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 }
 
-func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, locationPath string, inputType string, outputType string, noConcurrency bool, recursive bool) {
+func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, locationPath string, inputType string, recursive bool) {
 	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
@@ -803,7 +803,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 		} else {
 			if file.IsDir() && recursive {
 				wg.Add(1)
-				findImagesInDir(wg, itcc, dsc, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, outputType, noConcurrency, recursive)
+				findImagesInDir(wg, itcc, dsc, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive)
 			}
 		}
 	}
