@@ -761,19 +761,22 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	doneSearchingChan := make(chan bool, 8)
 	imagesToConvertChan := make(chan rawImage, 8)
 	if isDir, err := isDirectory(locationpath); isDir {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go findImagesInDir(&wg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
-		go convertRawImagesToCompressed(&imagesToConvertChan, &doneSearchingChan, outputType)
-		wg.Wait()
+		var fswg sync.WaitGroup
+		var icwg sync.WaitGroup
+		fswg.Add(1)
+		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
+		icwg.Add(1)
+		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, outputType)
+		fswg.Wait()
 		doneSearchingChan <- true
+		icwg.Wait()
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
 		}
 	}
-	close(imagesToConvertChan)
 	close(doneSearchingChan)
+	close(imagesToConvertChan)
 	var plural string
 	if len(loadedRawImages) > 1 {
 		plural = "s"
@@ -814,16 +817,18 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputType string) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, outputType string) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
+			wg.Add(1)
 			switch strings.ToLower(outputType) {
 			case ".jpg":
 				convertToJPEG(ri)
 			}
+			wg.Done()
 		} else {
-			break
+			wg.Done()
 		}
 	}
 }
