@@ -830,8 +830,12 @@ func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputTyp
 }
 
 func convertToJPEG(ri rawImage) {
-	ri.Load()
-	loadedRawImages = append(loadedRawImages, ri)
+	err := ri.Load()
+	if err != nil {
+		logging.Error(fmt.Sprintf("Error parsing data -> \"%s\"", err.Error()))
+	} else {
+		loadedRawImages = append(loadedRawImages, ri)
+	}
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
