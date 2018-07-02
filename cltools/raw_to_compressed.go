@@ -797,7 +797,6 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 		file := files[i]
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
 			image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
-			defer image.Close()
 			if err != nil {
 				logging.Error(err.Error())
 			}
@@ -836,6 +835,7 @@ func convertToJPEG(ri rawImage) {
 	} else {
 		loadedRawImages = append(loadedRawImages, ri)
 	}
+	ri.File.Close()
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
@@ -1134,11 +1134,7 @@ func readIFDBytes(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder
 func readHeaderBytes(file *os.File) ([]byte, error) {
 	header := make([]byte, 8)
 	file.Seek(0, 0)
-	bytesRead, err := file.Read(header)
-
-	if bytesRead < 8 {
-		return header, errors.New("Unable to read full header")
-	}
+	_, err := file.Read(header)
 
 	if err != nil {
 		return header, err
