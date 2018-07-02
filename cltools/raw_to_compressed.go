@@ -774,7 +774,13 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 	close(imagesToConvertChan)
 	close(doneSearchingChan)
-	logging.Info(fmt.Sprintf("Found %d raw images to convert.", len(loadedRawImages)))
+	var plural string
+	if len(loadedRawImages) > 1 {
+		plural = "s"
+	} else {
+		plural = ""
+	}
+	logging.Info(fmt.Sprintf("Found %d raw image%s to convert.", len(loadedRawImages), plural))
 	if timeStamp {
 		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 	}
