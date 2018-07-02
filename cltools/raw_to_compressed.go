@@ -696,7 +696,7 @@ type tiffIFD struct {
 }
 
 type gpsIFD struct {
-	GPSVersionID       [4]uint8
+	GPSVersionID       []uint8
 	GPSLatitudeRef     [2]string
 	GPSLatitude        [3]uint64
 	GPSLongitudeRef    [2]string
@@ -1066,10 +1066,18 @@ func parseGPSIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) 
 			switch tagAsInt {
 			case GPSVersionID:
 				if uint8(dataFormatAsInt) == unsignedByteType {
-					gpsVersionData := make([]byte, numOfElementsAsInt)
-					file.Seek(int64(i+8), os.SEEK_SET)
-					file.Read(gpsVersionData)
-					logging.Debug(fmt.Sprintf("GPS Version -> %x", gpsVersionData))
+					if numOfElementsAsInt == 4 {
+						var gpsVersionData []uint8
+						if tiffHeaderData.endianOrder == utils.BigEndian {
+							gpsVersionData = []uint8{uint8(ifdData[i+8]), uint8(ifdData[i+9]), uint8(ifdData[i+10]), uint8(ifdData[i+11])}
+						} else {
+							if tiffHeaderData.endianOrder == utils.LittleEndian {
+								gpsVersionData = []uint8{uint8(ifdData[i+11]), uint8(ifdData[i+10]), uint8(ifdData[i+9]), uint8(ifdData[i+8])}
+							}
+						}
+						gifd.GPSVersionID = gpsVersionData
+						logging.Debug(fmt.Sprintf("GPS Version -> %d", gpsVersionData))
+					}
 				}
 			}
 		}
