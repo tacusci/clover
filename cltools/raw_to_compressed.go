@@ -829,9 +829,10 @@ func convertRawImagesToCompressed(itcc *chan rawImage, dsc *chan bool, outputTyp
 }
 
 func convertToJPEG(ri rawImage) {
+	logging.Info(fmt.Sprintf("Converting image %s to JPEG", ri.File.Name()))
 	err := ri.Load()
 	if err != nil {
-		logging.Error(fmt.Sprintf("Error parsing data -> \"%s\"", err.Error()))
+		logging.Error(fmt.Sprintf("Error parsing data -> '%s'", err.Error()))
 	} else {
 		loadedRawImages = append(loadedRawImages, ri)
 	}
@@ -1133,8 +1134,17 @@ func readIFDBytes(file *os.File, ifdOffset uint32, endianOrder utils.EndianOrder
 
 func readHeaderBytes(file *os.File) ([]byte, error) {
 	header := make([]byte, 8)
+
+	fileStats, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if fileStats.Size() <= 1024 {
+		return nil, errors.New("File is less than 1KB in size")
+	}
+
 	file.Seek(0, 0)
-	_, err := file.Read(header)
+	_, err = file.Read(header)
 
 	if err != nil {
 		return header, err
