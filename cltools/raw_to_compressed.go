@@ -834,6 +834,13 @@ func convertToJPEG(ri rawImage) {
 	if err != nil {
 		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
 	} else {
+		if len(ri.ifds) >= 2 {
+			subIFD1 := ri.ifds[2]
+			ri.File.Seek(int64(subIFD1.StripOffsets), os.SEEK_SET)
+			stripBytes := make([]byte, subIFD1.StripByteCounts)
+			ri.File.Read(stripBytes)
+			//logging.Debug(fmt.Sprintf("%x", stripBytes))
+		}
 		logging.Info(" [SUCCESS]")
 		loadedRawImages = append(loadedRawImages, ri)
 	}
