@@ -768,6 +768,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 			logging.ErrorAndExit(err.Error())
 		}
 	}
+	close(imagesToConvertChan)
 	if timeStamp {
 		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 	}
@@ -790,7 +791,6 @@ func findImagesInDir(wg *sync.WaitGroup, locationPath string, inputType string, 
 			ri := rawImage{
 				File: image,
 			}
-			logging.Debug(fmt.Sprintf("Found image: %s", ri.File.Name()))
 			imagesToConvertChan <- ri
 		} else {
 			if file.IsDir() && recursive {
@@ -1141,6 +1141,7 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, outputType string) {
 
 func convertToJPEG() {
 	ri := <-imagesToConvertChan
+	logging.Debug(fmt.Sprintf("Converting %s to JPG", ri.File.Name()))
 	ri.Load()
 }
 
