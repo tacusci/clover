@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -770,7 +771,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
 		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
-		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, outputType, outputDirectory)
+		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, overwrite, outputDirectory)
 		//main thread doesn't wait after firing these goroutines, so force it to
 		//wait until the file searching thread has finished
 		fswg.Wait()
@@ -828,12 +829,12 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, outputType string, outputDirectory string) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, inputType string, outputType string, overwrite bool, outputDirectory string) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
 			wg.Add(1)
-			convertToCompressed(ri, outputType, outputDirectory)
+			convertToCompressed(ri, inputType, outputType, overwrite, outputDirectory)
 			wg.Done()
 		} else {
 			wg.Done()
@@ -841,10 +842,23 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 	}
 }
 
-func convertToCompressed(ri rawImage, outputType string, outputDirectory string) {
+func convertToCompressed(ri rawImage, inputType string, outputType string, overwrite bool, outputDirectory string) {
 	if ri.File == nil {
 		return
 	}
+
+	sb := strings.Builder{}
+	sb.WriteString(outputDirectory)
+	sb.WriteString(fmt.Sprintf("/%s", strings.TrimSuffix(filepath.Base(strings.ToLower(ri.File.Name())), inputType)))
+	sb.WriteString(outputType)
+
+	fmt.Printf("Converting image %s to %s", ri.File.Name(), outputType)
+
+	if _, err := os.Stat(utils.TranslatePath(sb.String())); err == nil && !overwrite {
+		logging.Error(" [FAILED] (Output result file already exists.)")
+		return
+	}
+
 	switch strings.ToLower(outputType) {
 	case ".jpg":
 		convertToJPEG(ri)
@@ -852,7 +866,6 @@ func convertToCompressed(ri rawImage, outputType string, outputDirectory string)
 }
 
 func convertToJPEG(ri rawImage) {
-	fmt.Printf("Converting image %s to .jpg", ri.File.Name())
 	err := ri.Load()
 	if err != nil {
 		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
