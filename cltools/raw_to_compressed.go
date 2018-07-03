@@ -802,6 +802,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 			image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
 			if err != nil {
 				logging.Error(err.Error())
+				continue
 			}
 			ri := rawImage{
 				File: image,
@@ -834,6 +835,9 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 }
 
 func convertToJPEG(ri rawImage) {
+	if ri.File == nil {
+		return
+	}
 	fmt.Printf("Converting image %s to .jpg", ri.File.Name())
 	err := ri.Load()
 	if err != nil {
