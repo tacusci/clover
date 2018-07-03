@@ -755,6 +755,9 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	fmt.Printf("Clover - Running Raw To Compressed tool...\n")
+
 	var st time.Time
 	if timeStamp {
 		st = time.Now()
