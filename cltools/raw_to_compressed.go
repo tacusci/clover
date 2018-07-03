@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"image"
 	"io/ioutil"
 	"math"
 	"os"
@@ -868,22 +869,27 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, overw
 		return
 	}
 
-	var convertedImage bool
+	var succussfullyConvertedImage bool
+	var convertedImage image.Image
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		convertedImage = convertToJPEG(ri)
+		succussfullyConvertedImage, convertedImage = convertToJPEG(ri)
 	default:
 		logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
-		convertedImage = false
+		succussfullyConvertedImage = false
 	}
 
-	if convertedImage {
+	if succussfullyConvertedImage {
 		*convertedImageCount++
+		if convertedImage != nil {
+
+		}
 	}
 }
 
-func convertToJPEG(ri rawImage) bool {
+func convertToJPEG(ri rawImage) (bool, image.Image) {
 	var convertedImage bool
+	var imageToReturn image.Image
 	err := ri.Load()
 	if err != nil {
 		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
@@ -894,13 +900,16 @@ func convertToJPEG(ri rawImage) bool {
 			ri.File.Seek(int64(subIFD1.StripOffsets), os.SEEK_SET)
 			ri.data = make([]byte, subIFD1.StripByteCounts)
 			ri.File.Read(ri.data)
+			yCbCrImage := image.NewYCbCr(image.Rect(0, 0, int(subIFD1.ImageWidth), int(subIFD1.ImageHeight)), image.YCbCrSubsampleRatio422)
+			yCbCrImage.ColorModel().Convert(image.Opaque)
+			imageToReturn = yCbCrImage
 			//logging.Debug(fmt.Sprintf("%x", stripBytes))
 		}
 		logging.Info(" [SUCCESS]")
 		convertedImage = true
 	}
 	ri.File.Close()
-	return convertedImage
+	return convertedImage, imageToReturn
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
