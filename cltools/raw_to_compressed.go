@@ -724,9 +724,6 @@ type rawImage struct {
 	data           []byte
 }
 
-var loadedRawImages []rawImage
-var supportedOutputTypes []string
-
 func (ri *rawImage) Load() error {
 	logging.Debug(fmt.Sprintf("\nParsing %s image data", ri.File.Name()))
 	headerBytes, err := readHeaderBytes(ri.File)
@@ -763,7 +760,8 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		st = time.Now()
 	}
 
-	supportedOutputTypes = []string{".jpg"}
+	var convertedImageCount uint32
+	supportedOutputTypes := []string{".jpg"}
 
 	if !utils.SSliceContains(supportedOutputTypes, outputType) {
 		logging.Error(fmt.Sprintf("Output type %s not recognised/supported.", outputType))
@@ -782,7 +780,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
 		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
-		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, overwrite, outputDirectory)
+		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, overwrite, outputDirectory, &convertedImageCount)
 		//main thread doesn't wait after firing these goroutines, so force it to
 		//wait until the file searching thread has finished
 		fswg.Wait()
@@ -799,12 +797,12 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	close(doneSearchingChan)
 	close(imagesToConvertChan)
 	var plural string
-	if len(loadedRawImages) > 1 {
+	if convertedImageCount > 1 {
 		plural = "s"
 	} else {
 		plural = ""
 	}
-	logging.Info(fmt.Sprintf("Found %d raw image%s to convert.", len(loadedRawImages), plural))
+	logging.Info(fmt.Sprintf("Successfully converted %d raw image%s", convertedImageCount, plural))
 	if timeStamp {
 		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 	}
@@ -840,12 +838,12 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, inputType string, outputType string, overwrite bool, outputDirectory string) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, inputType string, outputType string, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
 			wg.Add(1)
-			convertToCompressed(ri, inputType, outputType, overwrite, outputDirectory)
+			convertToCompressed(ri, inputType, outputType, overwrite, outputDirectory, convertedImageCount)
 			wg.Done()
 		} else {
 			wg.Done()
@@ -853,7 +851,7 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 	}
 }
 
-func convertToCompressed(ri rawImage, inputType string, outputType string, overwrite bool, outputDirectory string) {
+func convertToCompressed(ri rawImage, inputType string, outputType string, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
 	if ri.File == nil {
 		return
 	}
@@ -870,18 +868,26 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, overw
 		return
 	}
 
+	var convertedImage bool
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		convertToJPEG(ri)
+		convertedImage = convertToJPEG(ri)
 	default:
 		logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
+		convertedImage = false
+	}
+
+	if convertedImage {
+		*convertedImageCount++
 	}
 }
 
-func convertToJPEG(ri rawImage) {
+func convertToJPEG(ri rawImage) bool {
+	var convertedImage bool
 	err := ri.Load()
 	if err != nil {
 		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		convertedImage = false
 	} else {
 		if len(ri.ifds) >= 2 {
 			subIFD1 := ri.ifds[2]
@@ -891,9 +897,10 @@ func convertToJPEG(ri rawImage) {
 			//logging.Debug(fmt.Sprintf("%x", stripBytes))
 		}
 		logging.Info(" [SUCCESS]")
-		loadedRawImages = append(loadedRawImages, ri)
+		convertedImage = true
 	}
 	ri.File.Close()
+	return convertedImage
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
