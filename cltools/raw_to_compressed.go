@@ -833,10 +833,7 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 		if !<-*dsc {
 			ri := <-*itcc
 			wg.Add(1)
-			switch strings.ToLower(outputType) {
-			case ".jpg":
-				convertToJPEG(ri)
-			}
+			convertToCompressed(ri, outputType, outputDirectory)
 			wg.Done()
 		} else {
 			wg.Done()
@@ -844,10 +841,17 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 	}
 }
 
-func convertToJPEG(ri rawImage) {
+func convertToCompressed(ri rawImage, outputType string, outputDirectory string) {
 	if ri.File == nil {
 		return
 	}
+	switch strings.ToLower(outputType) {
+	case ".jpg":
+		convertToJPEG(ri)
+	}
+}
+
+func convertToJPEG(ri rawImage) {
 	fmt.Printf("Converting image %s to .jpg", ri.File.Name())
 	err := ri.Load()
 	if err != nil {
@@ -856,8 +860,8 @@ func convertToJPEG(ri rawImage) {
 		if len(ri.ifds) >= 2 {
 			subIFD1 := ri.ifds[2]
 			ri.File.Seek(int64(subIFD1.StripOffsets), os.SEEK_SET)
-			stripBytes := make([]byte, subIFD1.StripByteCounts)
-			ri.File.Read(stripBytes)
+			ri.data = make([]byte, subIFD1.StripByteCounts)
+			ri.File.Read(ri.data)
 			//logging.Debug(fmt.Sprintf("%x", stripBytes))
 		}
 		logging.Info(" [SUCCESS]")
