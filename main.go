@@ -63,14 +63,14 @@ func runTool(toolFlag string) {
 		outputType := flag.String("ot", "", "Extension of image type to output to.")
 		overwrite := flag.Bool("ow", false, "Overwrite existing images in output location.")
 		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
-		noConcurrency := flag.Bool("nc", false, "Disable concurrency/threading.")
+		showConversionOutput := flag.Bool("so", false, "Show conversion output.")
 		timeStamp := flag.Bool("ts", false, "Adds time stamp to show process duration in milliseconds in console output.")
 		logging.OutputDateTime, logging.OutputPath, logging.OutputLogLevelFlag, logging.OutputArrowSuffix = false, false, false, false
 		setLoggingLevel()
 
 		flag.Parse()
 
-		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *overwrite, *noConcurrency, *recursive)
+		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *showConversionOutput, *overwrite, *recursive)
 	} else {
 		outputUsageAndClose()
 	}
