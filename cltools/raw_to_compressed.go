@@ -725,6 +725,7 @@ type rawImage struct {
 }
 
 var loadedRawImages []rawImage
+var supportedOutputTypes []string
 
 func (ri *rawImage) Load() error {
 	logging.Debug(fmt.Sprintf("\nParsing %s image data", ri.File.Name()))
@@ -757,6 +758,13 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	var st time.Time
 	if timeStamp {
 		st = time.Now()
+	}
+
+	supportedOutputTypes = []string{".jpg"}
+
+	if !utils.SSliceContains(supportedOutputTypes, outputType) {
+		logging.Error(fmt.Sprintf("Output type %s not recognised/supported.", outputType))
+		return
 	}
 
 	doneSearchingChan := make(chan bool, 8)
@@ -862,6 +870,8 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, overw
 	switch strings.ToLower(outputType) {
 	case ".jpg":
 		convertToJPEG(ri)
+	default:
+		logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
 	}
 }
 

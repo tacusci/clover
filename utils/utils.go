@@ -112,3 +112,12 @@ func ConvertBytesSliceToFloat32(btc []byte, eo EndianOrder) float32 {
 func ConvertBytesToFloat32(byte1 byte, byte2 byte, byte3 byte, byte4 byte, endianOrder EndianOrder) float32 {
 	return 0.0
 }
+
+func SSliceContains(ls []string, itf string) bool {
+	for i := 0; i < len(ls); i++ {
+		if ls[i] == itf {
+			return true
+		}
+	}
+	return false
+}
