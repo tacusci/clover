@@ -61,6 +61,7 @@ func runTool(toolFlag string) {
 		outputDirectory := flag.String("od", "", "Location to save compressed images.")
 		inputType := flag.String("it", "", "Extension of image type to convert.")
 		outputType := flag.String("ot", "", "Extension of image type to output to.")
+		overwrite := flag.Bool("ow", false, "Overwrite existing images in output location.")
 		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
 		noConcurrency := flag.Bool("nc", false, "Disable concurrency/threading.")
 		timeStamp := flag.Bool("ts", false, "Adds time stamp to show process duration in milliseconds in console output.")
@@ -69,7 +70,7 @@ func runTool(toolFlag string) {
 
 		flag.Parse()
 
-		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *noConcurrency, *recursive)
+		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *overwrite, *noConcurrency, *recursive)
 	} else {
 		outputUsageAndClose()
 	}

@@ -748,7 +748,7 @@ func (ri *rawImage) Load() error {
 }
 
 //RunRtc runs the raw to compressed image conversion tool
-func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, noConcurrency bool, recursive bool) {
+func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, overwrite bool, noConcurrency bool, recursive bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -770,7 +770,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
 		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
-		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, outputType)
+		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, outputType, outputDirectory)
 		//main thread doesn't wait after firing these goroutines, so force it to
 		//wait until the file searching thread has finished
 		fswg.Wait()
@@ -828,7 +828,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, outputType string) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, outputType string, outputDirectory string) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
