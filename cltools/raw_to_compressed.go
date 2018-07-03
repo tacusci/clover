@@ -761,15 +761,24 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	doneSearchingChan := make(chan bool, 8)
 	imagesToConvertChan := make(chan rawImage, 8)
 	if isDir, err := isDirectory(locationpath); isDir {
+		//file searching wait group
 		var fswg sync.WaitGroup
+		//images to convert wait group
 		var icwg sync.WaitGroup
+		//add a wait for the initial single call of 'findImagesInDir'
 		fswg.Add(1)
 		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
+		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
 		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, outputType)
+		//main thread doesn't wait after firing these goroutines, so force it to
+		//wait until the file searching thread has finished
 		fswg.Wait()
+		//then tell the image conversion goroutine that there's no more images coming to convert
 		doneSearchingChan <- true
+		//wait on the image conversion goroutine until it's finished converting all images it's already been working on
 		icwg.Wait()
+		//both worker goroutines have finished, main thread continues
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
