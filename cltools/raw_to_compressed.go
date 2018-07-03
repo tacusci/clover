@@ -794,6 +794,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
 		logging.Error(err.Error())
+		return
 	}
 
 	for i := range files {
