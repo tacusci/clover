@@ -769,8 +769,8 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		return
 	}
 
-	doneSearchingChan := make(chan bool, 8)
-	imagesToConvertChan := make(chan rawImage, 8)
+	doneSearchingChan := make(chan bool, 32)
+	imagesToConvertChan := make(chan rawImage, 32)
 	if isDir, err := isDirectory(locationpath); isDir {
 		//file searching wait group
 		var fswg sync.WaitGroup
