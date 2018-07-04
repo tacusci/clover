@@ -898,7 +898,7 @@ func convertToJPEG(ri rawImage, outputPath string, showConversionOutput bool) bo
 		if showConversionOutput {
 			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
 		}
-		convertedImage = true
+		convertedImage = false
 	} else {
 		if len(ri.ifds) >= 2 {
 			jpgFile, err := os.Create(outputPath)
