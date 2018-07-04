@@ -763,7 +763,13 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 
 	var convertedImageCount uint32
+	supportedInputTypes := []string{".nef"}
 	supportedOutputTypes := []string{".jpg"}
+
+	if !utils.SSliceContains(supportedInputTypes, inputType) {
+		logging.Error(fmt.Sprintf("Input type %s not recognised/supported", outputType))
+		return
+	}
 
 	if !utils.SSliceContains(supportedOutputTypes, outputType) {
 		logging.Error(fmt.Sprintf("Output type %s not recognised/supported.", outputType))
