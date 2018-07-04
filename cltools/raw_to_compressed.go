@@ -721,6 +721,7 @@ type gpsIFD struct {
 type tiffImage interface {
 	Load() error
 	convertToJPEG(outputPath string, showConversionOutput bool) bool
+	GetRawImage() rawImage
 }
 
 type rawImage struct {
@@ -729,6 +730,10 @@ type rawImage struct {
 	ifds           []tiffIFD
 	compressedData []byte
 	data           []byte
+}
+
+func (ri *rawImage) GetRawImage() rawImage {
+	return *ri
 }
 
 func (ri *rawImage) Load() error {
@@ -753,13 +758,17 @@ func (ri *rawImage) Load() error {
 	return nil
 }
 
-func (ni *rawImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
+func (ri *rawImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
 	logging.Info("Converting RAW to JPEG.")
 	return false
 }
 
 type nefImage struct {
 	rawImage
+}
+
+func (ni *nefImage) GetRawImage() rawImage {
+	return ni.rawImage
 }
 
 func (ni *nefImage) Load() error {
@@ -834,7 +843,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 
 	doneSearchingChan := make(chan bool, 32)
-	imagesToConvertChan := make(chan rawImage, 32)
+	imagesToConvertChan := make(chan tiffImage, 32)
 	if isDir, err := isDirectory(locationpath); isDir {
 		//file searching wait group
 		var fswg sync.WaitGroup
@@ -873,7 +882,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 }
 
-func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, locationPath string, inputType string, recursive bool) {
+func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, locationPath string, inputType string, recursive bool) {
 	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
@@ -890,7 +899,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 					logging.Error(err.Error())
 					continue
 				}
-				ri := rawImage{
+				ri := &rawImage{
 					File: image,
 				}
 				*itcc <- ri
@@ -905,7 +914,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 	}
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
@@ -918,19 +927,19 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan rawImage, dsc *
 	}
 }
 
-func convertToCompressed(ri rawImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
-	if ri.File == nil {
+func convertToCompressed(ti tiffImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
+	if ti.GetRawImage().File == nil {
 		return
 	}
 
 	sb := strings.Builder{}
 	sb.WriteString(outputDirectory)
-	sb.WriteString(fmt.Sprintf("/%s", strings.TrimSuffix(filepath.Base(strings.ToLower(ri.File.Name())), inputType)))
+	sb.WriteString(fmt.Sprintf("/%s", strings.TrimSuffix(filepath.Base(strings.ToLower(ti.GetRawImage().File.Name())), inputType)))
 	sb.WriteString(outputType)
 	outputPath := sb.String()
 
 	if showConversionOutput {
-		fmt.Printf("Converting image %s to %s", ri.File.Name(), outputType)
+		fmt.Printf("Converting image %s to %s", ti.GetRawImage().File.Name(), outputType)
 	}
 
 	if _, err := os.Stat(utils.TranslatePath(sb.String())); err == nil && !overwrite {
@@ -943,7 +952,7 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, showC
 	var succussfullyConvertedImage bool
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		succussfullyConvertedImage = ri.convertToJPEG(outputPath, showConversionOutput)
+		succussfullyConvertedImage = ti.convertToJPEG(outputPath, showConversionOutput)
 		// succussfullyConvertedImage = convertToJPEG(ri, outputPath, showConversionOutput)
 	default:
 		if showConversionOutput {
