@@ -718,6 +718,11 @@ type gpsIFD struct {
 	GPSImgDirection    uint64
 }
 
+type tiffImage interface {
+	Load() error
+	convertToJPEG() bool
+}
+
 type rawImage struct {
 	File           *os.File
 	header         tiffHeader
@@ -746,6 +751,24 @@ func (ri *rawImage) Load() error {
 		ri.ifds = append(ri.ifds, parseIFDBytes(ri.File, readIFDBytes(ri.File, ifd0.SubIFDOffsets[i], ri.header.endianOrder), ri.header))
 	}
 	return nil
+}
+
+func (ni *rawImage) convertToJPEG() bool {
+	logging.Info("Converting RAW to JPEG.")
+	return false
+}
+
+type nefImage struct {
+	rawImage
+}
+
+func (ni *nefImage) Load() error {
+	return ni.rawImage.Load()
+}
+
+func (ni *nefImage) convertToJPEG() bool {
+	logging.Info("Converting NEF to JPEG.")
+	return false
 }
 
 //RunRtc runs the raw to compressed image conversion tool
