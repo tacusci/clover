@@ -902,6 +902,7 @@ func convertToJPEG(ri rawImage, outputPath string, showConversionOutput bool) bo
 	} else {
 		if len(ri.ifds) >= 2 {
 			jpgFile, err := os.Create(outputPath)
+			defer jpgFile.Close()
 			if err != nil {
 				logging.Error(err.Error())
 				convertedImage = false
@@ -918,7 +919,6 @@ func convertToJPEG(ri rawImage, outputPath string, showConversionOutput bool) bo
 				convertedImage = false
 			}
 			err = jpeg.Encode(jpgFile, img, nil)
-			jpgFile.Close()
 		}
 		if showConversionOutput && !convertedImage {
 			logging.Info(" [SUCCESS]")
