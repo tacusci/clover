@@ -820,17 +820,19 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan rawImage, dsc *chan bool, lo
 
 	for i := range files {
 		file := files[i]
-		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
-			image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
-			if err != nil {
-				logging.Error(err.Error())
-				continue
+		if !file.IsDir() {
+			if strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
+				image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
+				if err != nil {
+					logging.Error(err.Error())
+					continue
+				}
+				ri := rawImage{
+					File: image,
+				}
+				*itcc <- ri
+				*dsc <- false
 			}
-			ri := rawImage{
-				File: image,
-			}
-			*itcc <- ri
-			*dsc <- false
 		} else {
 			if file.IsDir() && recursive {
 				wg.Add(1)
