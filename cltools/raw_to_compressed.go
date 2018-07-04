@@ -720,7 +720,7 @@ type gpsIFD struct {
 
 type tiffImage interface {
 	Load() error
-	convertToJPEG() bool
+	convertToJPEG(outputPath string, showConversionOutput bool) bool
 }
 
 type rawImage struct {
@@ -753,7 +753,7 @@ func (ri *rawImage) Load() error {
 	return nil
 }
 
-func (ni *rawImage) convertToJPEG() bool {
+func (ni *rawImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
 	logging.Info("Converting RAW to JPEG.")
 	return false
 }
@@ -766,9 +766,43 @@ func (ni *nefImage) Load() error {
 	return ni.rawImage.Load()
 }
 
-func (ni *nefImage) convertToJPEG() bool {
+func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
 	logging.Info("Converting NEF to JPEG.")
-	return false
+	var convertedImage bool
+	err := ni.rawImage.Load()
+	if err != nil {
+		if showConversionOutput {
+			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		}
+		convertedImage = false
+	} else {
+		if len(ni.rawImage.ifds) >= 2 {
+			jpgFile, err := os.Create(outputPath)
+			defer jpgFile.Close()
+			if err != nil {
+				logging.Error(err.Error())
+				convertedImage = false
+			}
+			// subIFD1 := ri.ifds[2]
+			ni.rawImage.data = make([]byte, ni.rawImage.ifds[1].JpegFromRawLength)
+			ni.rawImage.File.ReadAt(ni.rawImage.data, int64(ni.rawImage.ifds[1].JpegFromRawStart))
+
+			bReader := bytes.NewReader(ni.rawImage.data)
+			img, err := jpeg.Decode(bReader)
+
+			if err != nil {
+				logging.Error(err.Error())
+				convertedImage = false
+			}
+			err = jpeg.Encode(jpgFile, img, nil)
+		}
+		if showConversionOutput && !convertedImage {
+			logging.Info(" [SUCCESS]")
+		}
+		convertedImage = true
+	}
+	ni.rawImage.File.Close()
+	return convertedImage
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -909,7 +943,8 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, showC
 	var succussfullyConvertedImage bool
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		succussfullyConvertedImage = convertToJPEG(ri, outputPath, showConversionOutput)
+		succussfullyConvertedImage = ri.convertToJPEG(outputPath, showConversionOutput)
+		// succussfullyConvertedImage = convertToJPEG(ri, outputPath, showConversionOutput)
 	default:
 		if showConversionOutput {
 			logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
@@ -920,44 +955,6 @@ func convertToCompressed(ri rawImage, inputType string, outputType string, showC
 	if succussfullyConvertedImage {
 		*convertedImageCount++
 	}
-}
-
-func convertToJPEG(ri rawImage, outputPath string, showConversionOutput bool) bool {
-	var convertedImage bool
-	err := ri.Load()
-	if err != nil {
-		if showConversionOutput {
-			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
-		}
-		convertedImage = false
-	} else {
-		if len(ri.ifds) >= 2 {
-			jpgFile, err := os.Create(outputPath)
-			defer jpgFile.Close()
-			if err != nil {
-				logging.Error(err.Error())
-				convertedImage = false
-			}
-			// subIFD1 := ri.ifds[2]
-			ri.data = make([]byte, ri.ifds[1].JpegFromRawLength)
-			ri.File.ReadAt(ri.data, int64(ri.ifds[1].JpegFromRawStart))
-
-			bReader := bytes.NewReader(ri.data)
-			img, err := jpeg.Decode(bReader)
-
-			if err != nil {
-				logging.Error(err.Error())
-				convertedImage = false
-			}
-			err = jpeg.Encode(jpgFile, img, nil)
-		}
-		if showConversionOutput && !convertedImage {
-			logging.Info(" [SUCCESS]")
-		}
-		convertedImage = true
-	}
-	ri.File.Close()
-	return convertedImage
 }
 
 func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tiffIFD {
