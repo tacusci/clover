@@ -773,6 +773,7 @@ func (ni *nefImage) Load() error {
 func (ni *nefImage) convertToJPEG(outputPath string) error {
 	var conversionError error
 	err := ni.rawImage.Load()
+	defer ni.rawImage.File.Close()
 	if err != nil {
 		conversionError = err
 	} else {
@@ -799,7 +800,6 @@ func (ni *nefImage) convertToJPEG(outputPath string) error {
 		}
 		conversionError = nil
 	}
-	ni.rawImage.File.Close()
 	return conversionError
 }
 
