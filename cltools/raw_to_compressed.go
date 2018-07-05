@@ -847,8 +847,19 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		return
 	}
 
+	if isDir, err := isDirectory(outputDirectory); !isDir {
+		if err != nil {
+			err = os.Mkdir(outputDirectory, os.ModePerm)
+			if err != nil {
+				logging.Error(err.Error())
+				return
+			}
+		}
+	}
+
 	doneSearchingChan := make(chan bool, 32)
 	imagesToConvertChan := make(chan tiffImage, 32)
+
 	if isDir, err := isDirectory(locationpath); isDir {
 		//file searching wait group
 		var fswg sync.WaitGroup
