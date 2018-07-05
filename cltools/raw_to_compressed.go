@@ -758,11 +758,6 @@ func (ri *rawImage) Load() error {
 	return nil
 }
 
-func (ri *rawImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
-	logging.Info("Converting RAW to JPEG.")
-	return false
-}
-
 type nefImage struct {
 	rawImage
 }
@@ -899,10 +894,16 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 					logging.Error(err.Error())
 					continue
 				}
-				ri := &rawImage{
-					File: image,
+				var ti tiffImage
+				switch inputType {
+				case ".nef":
+					ti = &nefImage{
+						rawImage{
+							File: image,
+						},
+					}
 				}
-				*itcc <- ri
+				*itcc <- ti
 				*dsc <- false
 			}
 		} else {
