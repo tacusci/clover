@@ -782,6 +782,7 @@ func (ni *nefImage) convertToJPEG(outputPath string) error {
 			if err != nil {
 				logging.Error(err.Error())
 				conversionError = err
+				return conversionError
 			}
 			// subIFD1 := ri.ifds[2]
 			ni.rawImage.data = make([]byte, ni.rawImage.ifds[1].JpegFromRawLength)
@@ -960,13 +961,13 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	sb.WriteString(outputDirectory)
 	sb.WriteString(fmt.Sprintf("/%s", strings.TrimSuffix(filepath.Base(strings.ToLower(ti.GetRawImage().File.Name())), inputType)))
 	sb.WriteString(outputType)
-	outputPath := sb.String()
+	outputPath := utils.TranslatePath(sb.String())
 
 	if showConversionOutput {
 		fmt.Printf("Converting image %s to %s", ti.GetRawImage().File.Name(), outputType)
 	}
 
-	if _, err := os.Stat(utils.TranslatePath(sb.String())); err == nil && !overwrite {
+	if _, err := os.Stat(outputPath); err == nil && !overwrite {
 		if showConversionOutput {
 			logging.Error(" [FAILED] (Output result file already exists.)")
 		}
@@ -1352,5 +1353,8 @@ func getEdianOrder(header []byte) utils.EndianOrder {
 
 func isDirectory(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
+	if fileInfo == nil {
+		return false, err
+	}
 	return fileInfo.IsDir(), err
 }
