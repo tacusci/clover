@@ -920,7 +920,9 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc 
 		if !<-*dsc {
 			ri := <-*itcc
 			wg.Add(1)
-			convertToCompressed(ri, inputType, outputType, showConversionOutput, overwrite, outputDirectory, convertedImageCount)
+			if ri != nil {
+				convertToCompressed(ri, inputType, outputType, showConversionOutput, overwrite, outputDirectory, convertedImageCount)
+			}
 			wg.Done()
 		} else {
 			wg.Done()
@@ -929,6 +931,10 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc 
 }
 
 func convertToCompressed(ti tiffImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
+	if ti == nil {
+		return
+	}
+
 	if ti.GetRawImage().File == nil {
 		return
 	}
