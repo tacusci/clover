@@ -720,7 +720,7 @@ type gpsIFD struct {
 
 type tiffImage interface {
 	Load() error
-	convertToJPEG(outputPath string, showConversionOutput bool) bool
+	convertToJPEG(outputPath string) error
 	GetRawImage() rawImage
 }
 
@@ -770,21 +770,18 @@ func (ni *nefImage) Load() error {
 	return ni.rawImage.Load()
 }
 
-func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
-	var convertedImage bool
+func (ni *nefImage) convertToJPEG(outputPath string) error {
+	var conversionError error
 	err := ni.rawImage.Load()
 	if err != nil {
-		if showConversionOutput {
-			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
-		}
-		convertedImage = false
+		conversionError = err
 	} else {
 		if len(ni.rawImage.ifds) >= 2 {
 			jpgFile, err := os.Create(outputPath)
 			defer jpgFile.Close()
 			if err != nil {
 				logging.Error(err.Error())
-				convertedImage = false
+				conversionError = err
 			}
 			// subIFD1 := ri.ifds[2]
 			ni.rawImage.data = make([]byte, ni.rawImage.ifds[1].JpegFromRawLength)
@@ -795,14 +792,14 @@ func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) 
 
 			if err != nil {
 				logging.Error(err.Error())
-				convertedImage = false
+				conversionError = err
 			}
-			err = jpeg.Encode(jpgFile, img, nil)
+			conversionError = jpeg.Encode(jpgFile, img, nil)
 		}
-		convertedImage = true
+		conversionError = nil
 	}
 	ni.rawImage.File.Close()
-	return convertedImage
+	return conversionError
 }
 
 type cr2Image struct {
@@ -817,8 +814,8 @@ func (ci *cr2Image) Load() error {
 	return ci.rawImage.Load()
 }
 
-func (ci *cr2Image) convertToJPEG(outputPath string, showConversionOutput bool) bool {
-	return false
+func (ci *cr2Image) convertToJPEG(outputPath string) error {
+	return nil
 }
 
 //RunRtc runs the raw to compressed image conversion tool
@@ -979,11 +976,16 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	var succussfullyConvertedImage bool
 	switch strings.ToLower(outputType) {
 	case ".jpg":
-		succussfullyConvertedImage = ti.convertToJPEG(outputPath, showConversionOutput)
-		if showConversionOutput && !succussfullyConvertedImage {
-			logging.Info(" [SUCCESS]")
+		err := ti.convertToJPEG(outputPath)
+
+		if showConversionOutput {
+			if err != nil {
+				logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+			} else {
+				logging.Info(" [SUCCESS]")
+				succussfullyConvertedImage = true
+			}
 		}
-		// succussfullyConvertedImage = convertToJPEG(ri, outputPath, showConversionOutput)
 	default:
 		if showConversionOutput {
 			logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
