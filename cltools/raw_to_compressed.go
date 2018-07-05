@@ -978,14 +978,18 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	case ".jpg":
 		err := ti.convertToJPEG(outputPath)
 
-		if showConversionOutput {
-			if err != nil {
+		if err != nil {
+			if showConversionOutput {
 				logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
-			} else {
-				logging.Info(" [SUCCESS]")
-				succussfullyConvertedImage = true
 			}
+			succussfullyConvertedImage = false
+		} else {
+			if showConversionOutput {
+				logging.Info(" [SUCCESS]")
+			}
+			succussfullyConvertedImage = true
 		}
+
 	default:
 		if showConversionOutput {
 			logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
