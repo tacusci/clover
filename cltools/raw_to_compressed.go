@@ -837,7 +837,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	supportedOutputTypes := []string{".jpg"}
 
 	if !utils.SSliceContains(supportedInputTypes, inputType) {
-		logging.Error(fmt.Sprintf("Input type %s not recognised/supported", outputType))
+		logging.Error(fmt.Sprintf("Input type %s not recognised/supported", inputType))
 		return
 	}
 
