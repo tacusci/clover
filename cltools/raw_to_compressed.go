@@ -771,7 +771,6 @@ func (ni *nefImage) Load() error {
 }
 
 func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) bool {
-	logging.Info("Converting NEF to JPEG.")
 	var convertedImage bool
 	err := ni.rawImage.Load()
 	if err != nil {
@@ -799,9 +798,6 @@ func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) 
 				convertedImage = false
 			}
 			err = jpeg.Encode(jpgFile, img, nil)
-		}
-		if showConversionOutput && !convertedImage {
-			logging.Info(" [SUCCESS]")
 		}
 		convertedImage = true
 	}
@@ -962,6 +958,9 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	switch strings.ToLower(outputType) {
 	case ".jpg":
 		succussfullyConvertedImage = ti.convertToJPEG(outputPath, showConversionOutput)
+		if showConversionOutput && !succussfullyConvertedImage {
+			logging.Info(" [SUCCESS]")
+		}
 		// succussfullyConvertedImage = convertToJPEG(ri, outputPath, showConversionOutput)
 	default:
 		if showConversionOutput {
