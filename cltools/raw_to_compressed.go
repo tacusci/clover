@@ -970,8 +970,13 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 
 	sb := strings.Builder{}
 	sb.WriteString(outputDirectory)
-	sb.WriteString(fmt.Sprintf("/%s", strings.TrimSuffix(filepath.Base(strings.ToLower(ti.GetRawImage().File.Name())), inputType)))
+	fileName := strings.TrimSuffix(ti.GetRawImage().File.Name(), inputType)
+	fileName = strings.TrimSuffix(fileName, strings.ToUpper(inputType))
+	fileName = filepath.Base(fileName)
+	sb.WriteRune(os.PathSeparator)
+	sb.WriteString(fileName)
 	sb.WriteString(outputType)
+
 	outputPath := utils.TranslatePath(sb.String())
 
 	if showConversionOutput {
