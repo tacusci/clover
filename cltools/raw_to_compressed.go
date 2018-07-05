@@ -820,7 +820,7 @@ func (ci *cr2Image) convertToJPEG(outputPath string) error {
 }
 
 //RunRtc runs the raw to compressed image conversion tool
-func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, showConversionOutput bool, overwrite bool, recursive bool) {
+func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, showConversionOutput bool, overwrite bool, recursive bool, retainFolderStructure bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -870,7 +870,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
 		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
-		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, showConversionOutput, overwrite, outputDirectory, &convertedImageCount)
+		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, outputDirectory, &convertedImageCount)
 		//main thread doesn't wait after firing these goroutines, so force it to
 		//wait until the file searching thread has finished
 		fswg.Wait()
@@ -944,13 +944,13 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 	}
 }
 
-func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
+func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, inputType string, outputType string, showConversionOutput bool, overwrite bool, retainFolderStructure bool, outputDirectory string, convertedImageCount *uint32) {
 	for {
 		if !<-*dsc {
 			ri := <-*itcc
 			wg.Add(1)
 			if ri != nil {
-				convertToCompressed(ri, inputType, outputType, showConversionOutput, overwrite, outputDirectory, convertedImageCount)
+				convertToCompressed(ri, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, outputDirectory, convertedImageCount)
 			}
 			wg.Done()
 		} else {
@@ -959,7 +959,7 @@ func convertRawImagesToCompressed(wg *sync.WaitGroup, itcc *chan tiffImage, dsc 
 	}
 }
 
-func convertToCompressed(ti tiffImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, outputDirectory string, convertedImageCount *uint32) {
+func convertToCompressed(ti tiffImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, retainFolderStructure bool, outputDirectory string, convertedImageCount *uint32) {
 	if ti == nil {
 		return
 	}
