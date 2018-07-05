@@ -805,6 +805,22 @@ func (ni *nefImage) convertToJPEG(outputPath string, showConversionOutput bool) 
 	return convertedImage
 }
 
+type cr2Image struct {
+	rawImage
+}
+
+func (ci *cr2Image) GetRawImage() rawImage {
+	return ci.rawImage
+}
+
+func (ci *cr2Image) Load() error {
+	return ci.rawImage.Load()
+}
+
+func (ci *cr2Image) convertToJPEG(outputPath string, showConversionOutput bool) bool {
+	return false
+}
+
 //RunRtc runs the raw to compressed image conversion tool
 func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, showConversionOutput bool, overwrite bool, recursive bool) {
 	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
@@ -894,6 +910,12 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 				switch inputType {
 				case ".nef":
 					ti = &nefImage{
+						rawImage{
+							File: image,
+						},
+					}
+				case ".cr2":
+					ti = &cr2Image{
 						rawImage{
 							File: image,
 						},
