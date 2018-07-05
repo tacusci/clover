@@ -903,8 +903,10 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 						},
 					}
 				}
-				*itcc <- ti
-				*dsc <- false
+				if ti != nil {
+					*itcc <- ti
+					*dsc <- false
+				}
 			}
 		} else {
 			if file.IsDir() && recursive {
