@@ -1142,7 +1142,6 @@ func parseIFDBytes(file *os.File, ifdData []byte, tiffHeaderData tiffHeader) tif
 					logging.Debug(fmt.Sprintf("Artist: %s", artistTextData))
 				}
 			case subIFDA100DataOffsetTag:
-				//correct offset should actually be: 176332
 				if uint8(dataFormatAsInt) == unsignedLongType {
 					file.Seek(int64(dataValueOrDataOffsetAsInt), os.SEEK_SET)
 					subIfdDataOffsetData := make([]byte, 4*numOfElementsAsInt)
