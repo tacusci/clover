@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"math"
 	"os"
@@ -721,6 +722,7 @@ type gpsIFD struct {
 type tiffImage interface {
 	Load() error
 	convertToJPEG(outputPath string) error
+	convertToPNG(outputPath string) error
 	GetRawImage() rawImage
 }
 
@@ -772,7 +774,7 @@ func (ni *nefImage) Load() error {
 
 func (ni *nefImage) convertToJPEG(outputPath string) error {
 	var conversionError error
-	err := ni.rawImage.Load()
+	err := ni.Load()
 	defer ni.rawImage.File.Close()
 	if err != nil {
 		conversionError = err
@@ -803,6 +805,40 @@ func (ni *nefImage) convertToJPEG(outputPath string) error {
 	return conversionError
 }
 
+//experimental, work in progress DO NOT USE
+func (ni *nefImage) convertToPNG(outputPath string) error {
+	var conversionError error
+	err := ni.Load()
+	defer ni.rawImage.File.Close()
+	if err != nil {
+		conversionError = err
+	} else {
+		if len(ni.rawImage.ifds) >= 2 {
+			pngFile, err := os.Create(outputPath)
+			defer pngFile.Close()
+			if err != nil {
+				logging.Error(err.Error())
+				conversionError = err
+				return conversionError
+			}
+			// subIFD1 := ri.ifds[2]
+			ni.rawImage.data = make([]byte, ni.rawImage.ifds[1].JpegFromRawLength)
+			ni.rawImage.File.ReadAt(ni.rawImage.data, int64(ni.rawImage.ifds[1].JpegFromRawStart))
+
+			bReader := bytes.NewReader(ni.rawImage.data)
+			img, err := jpeg.Decode(bReader)
+
+			if err != nil {
+				logging.Error(err.Error())
+				conversionError = err
+			}
+			conversionError = png.Encode(pngFile, img)
+		}
+		conversionError = nil
+	}
+	return conversionError
+}
+
 type cr2Image struct {
 	rawImage
 }
@@ -818,6 +854,8 @@ func (ci *cr2Image) Load() error {
 func (ci *cr2Image) convertToJPEG(outputPath string) error {
 	return nil
 }
+
+func (ci *cr2Image) convertToPNG(outputPath string) error { return nil }
 
 //RunRtc runs the raw to compressed image conversion tool
 func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, showConversionOutput bool, overwrite bool, recursive bool, retainFolderStructure bool) {
@@ -835,7 +873,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 
 	var convertedImageCount uint32
 	supportedInputTypes := []string{".nef"}
-	supportedOutputTypes := []string{".jpg"}
+	supportedOutputTypes := []string{".jpg", ".png"}
 
 	if !utils.SSliceContains(supportedInputTypes, inputType) {
 		logging.Error(fmt.Sprintf("Input type %s not recognised/supported", inputType))
@@ -1006,6 +1044,8 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	switch strings.ToLower(outputType) {
 	case ".jpg":
 		conversionError = ti.convertToJPEG(outputPath)
+	case ".png":
+		conversionError = ti.convertToPNG(outputPath)
 	default:
 		if showConversionOutput {
 			logging.Error(fmt.Sprintf("[FAILED] (Output type %s not recognised/supported.)", outputType))
