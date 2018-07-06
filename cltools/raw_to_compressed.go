@@ -968,8 +968,8 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	sb.WriteString(outputDirectory)
 
 	if retainFolderStructure {
-		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", 1)
-		subDirToAdd = strings.Replace(subDirToAdd, filepath.Base(ti.GetRawImage().File.Name()), "", 1)
+		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", -1)
+		subDirToAdd = strings.Replace(subDirToAdd, filepath.Base(ti.GetRawImage().File.Name()), "", -1)
 		sb.WriteString(subDirToAdd)
 		if err := createDirectoryIfNotExists(sb.String()); err != nil {
 			logging.Error(err.Error())
