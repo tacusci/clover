@@ -9,7 +9,12 @@ import (
 	"github.com/tacusci/logging"
 )
 
+const (
+	VER_NUM = "v0.0.1a"
+)
+
 func outputUsage() {
+	fmt.Printf("Clover - %s (c) tacusci ltd 2018\n", VER_NUM)
 	println("Usage: " + os.Args[0] + " </TOOLFLAG>")
 	fmt.Printf("\t/sdc (StorageDeviceChecker) - Tool for checking size of storage devices.\n")
 	fmt.Printf("\t/rtc (RawToCompressed) - Tool for batch compressing raw images.\n")
