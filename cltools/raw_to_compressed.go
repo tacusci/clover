@@ -847,14 +847,10 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		return
 	}
 
-	if isDir, err := isDirectory(outputDirectory); !isDir {
-		if err != nil {
-			err = os.Mkdir(outputDirectory, os.ModePerm)
-			if err != nil {
-				logging.Error(err.Error())
-				return
-			}
-		}
+	err := createDirectoryIfNotExists(outputDirectory)
+	if err != nil {
+		logging.Error(err.Error())
+		return
 	}
 
 	doneSearchingChan := make(chan bool, 32)
@@ -970,12 +966,27 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 
 	sb := strings.Builder{}
 	sb.WriteString(outputDirectory)
-	fileName := strings.TrimSuffix(ti.GetRawImage().File.Name(), inputType)
-	fileName = strings.TrimSuffix(fileName, strings.ToUpper(inputType))
-	fileName = filepath.Base(fileName)
-	sb.WriteRune(os.PathSeparator)
-	sb.WriteString(fileName)
-	sb.WriteString(outputType)
+
+	if retainFolderStructure {
+		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", 1)
+		subDirToAdd = strings.Replace(subDirToAdd, filepath.Base(ti.GetRawImage().File.Name()), "", 1)
+		sb.WriteString(subDirToAdd)
+		if err := createDirectoryIfNotExists(sb.String()); err != nil {
+			logging.Error(err.Error())
+			return
+		}
+	}
+
+	var fileNameToAdd string
+	fileNameToAdd = filepath.Base(ti.GetRawImage().File.Name())
+	fileNameToAdd = strings.Replace(fileNameToAdd, inputType, outputType, 1)
+	fileNameToAdd = strings.Replace(fileNameToAdd, strings.ToUpper(inputType), strings.ToUpper(outputType), 1)
+
+	if !retainFolderStructure {
+		sb.WriteRune(os.PathSeparator)
+	}
+
+	sb.WriteString(fileNameToAdd)
 
 	outputPath := utils.TranslatePath(sb.String())
 
@@ -1373,4 +1384,16 @@ func isDirectory(path string) (bool, error) {
 		return false, err
 	}
 	return fileInfo.IsDir(), err
+}
+
+func createDirectoryIfNotExists(dir string) error {
+	if isDir, err := isDirectory(dir); !isDir {
+		if err != nil {
+			err = os.MkdirAll(dir, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
