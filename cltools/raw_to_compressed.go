@@ -1006,7 +1006,7 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	}
 
 	sb := strings.Builder{}
-	sb.WriteString(outputDirectory)
+	sb.WriteString(strings.TrimRight(outputDirectory, string(os.PathSeparator)))
 
 	if retainFolderStructure {
 		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", -1)
