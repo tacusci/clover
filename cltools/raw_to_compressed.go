@@ -921,7 +921,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	close(doneSearchingChan)
 	close(imagesToConvertChan)
 	var plural string
-	if convertedImageCount > 1 {
+	if convertedImageCount != 1 {
 		plural = "s"
 	} else {
 		plural = ""
