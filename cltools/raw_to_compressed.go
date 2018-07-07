@@ -1005,6 +1005,8 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 		return
 	}
 
+	defer ti.GetRawImage().File.Close()
+
 	sb := strings.Builder{}
 	sb.WriteString(strings.TrimRight(outputDirectory, string(os.PathSeparator)))
 
