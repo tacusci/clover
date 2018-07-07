@@ -943,6 +943,9 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 	for i := range files {
 		file := files[i]
 		if !file.IsDir() {
+			if strings.Contains(file.Name(), "2017") {
+				logging.Debug("Breakpoint.")
+			}
 			if strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
 				image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
 				if err != nil {
@@ -1008,6 +1011,9 @@ func convertToCompressed(ti tiffImage, inputType string, outputType string, show
 	if retainFolderStructure {
 		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", -1)
 		subDirToAdd = strings.Replace(subDirToAdd, filepath.Base(ti.GetRawImage().File.Name()), "", -1)
+		if subDirToAdd != string(os.PathSeparator) {
+			sb.WriteString(string(os.PathSeparator))
+		}
 		sb.WriteString(subDirToAdd)
 		if err := createDirectoryIfNotExists(sb.String()); err != nil {
 			logging.Error(err.Error())
