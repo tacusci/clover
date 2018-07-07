@@ -943,9 +943,6 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 	for i := range files {
 		file := files[i]
 		if !file.IsDir() {
-			if strings.Contains(file.Name(), "2017") {
-				logging.Debug("Breakpoint.")
-			}
 			if strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
 				image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
 				if err != nil {
