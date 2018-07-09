@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -1440,4 +1441,28 @@ func createDirectoryIfNotExists(dir string) error {
 		}
 	}
 	return nil
+}
+
+func parseInputOutput(inputType string, outputType string, supportedInputTypes []string, supportOutputTypes []string) (string, string, error) {
+
+	r := regexp.MustCompile("(\\w+)\\.(\\w+)")
+	res := r.FindStringSubmatch(inputType)
+
+	if len(res) == 0 {
+		return "", "", fmt.Errorf("Input type %s format not recognised", inputType)
+	}
+
+	var inputPrefix string
+	if len(res) > 1 {
+		inputPrefix = res[0]
+		inputType = res[1]
+	}
+
+	if !utils.SSliceContains(supportedInputTypes, inputType) {
+		return "", "", fmt.Errorf("Input type %s not supported", inputType)
+	}
+
+	if !utils.SSliceContains(supportOutputTypes, outputType) {
+		return "", "", fmt.Errorf("Output type %s not supported", outputType)
+	}
 }
