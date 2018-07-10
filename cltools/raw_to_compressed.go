@@ -872,21 +872,17 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		st = time.Now()
 	}
 
+	err := createDirectoryIfNotExists(outputDirectory)
+	if err != nil {
+		logging.Error(err.Error())
+		return
+	}
+
 	var convertedImageCount uint32
 	supportedInputTypes := []string{".nef"}
 	supportedOutputTypes := []string{".jpg", ".png"}
 
-	if !utils.SSliceContains(supportedInputTypes, inputType) {
-		logging.Error(fmt.Sprintf("Input type %s not recognised/supported", inputType))
-		return
-	}
-
-	if !utils.SSliceContains(supportedOutputTypes, outputType) {
-		logging.Error(fmt.Sprintf("Output type %s not recognised/supported.", outputType))
-		return
-	}
-
-	err := createDirectoryIfNotExists(outputDirectory)
+	inputTypePrefixToMatch, inputType, err := parseInputOutputTypes(inputType, outputType, supportedInputTypes, supportedOutputTypes)
 	if err != nil {
 		logging.Error(err.Error())
 		return
@@ -902,7 +898,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 		var icwg sync.WaitGroup
 		//add a wait for the initial single call of 'findImagesInDir'
 		fswg.Add(1)
-		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputType, recursive)
+		go findImagesInDir(&fswg, &imagesToConvertChan, &doneSearchingChan, locationpath, inputTypePrefixToMatch, inputType, recursive)
 		//add a wait for the call of 'convertRawImagesToCompressed'
 		icwg.Add(1)
 		go convertRawImagesToCompressed(&icwg, &imagesToConvertChan, &doneSearchingChan, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, locationpath, outputDirectory, &convertedImageCount)
@@ -933,7 +929,7 @@ func RunRtc(timeStamp bool, locationpath string, outputDirectory string, inputTy
 	}
 }
 
-func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, locationPath string, inputType string, recursive bool) {
+func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, locationPath string, inputTypePrefixToMatch string, inputType string, recursive bool) {
 	defer wg.Done()
 	files, err := ioutil.ReadDir(locationPath)
 	if err != nil {
@@ -945,6 +941,11 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 		file := files[i]
 		if !file.IsDir() {
 			if strings.HasSuffix(strings.ToLower(file.Name()), strings.ToLower(inputType)) {
+				if inputTypePrefixToMatch != "*" {
+					if !strings.Contains(file.Name(), inputTypePrefixToMatch) {
+						continue
+					}
+				}
 				image, err := os.Open(utils.TranslatePath(path.Join(locationPath, file.Name())))
 				if err != nil {
 					logging.Error(err.Error())
@@ -973,7 +974,7 @@ func findImagesInDir(wg *sync.WaitGroup, itcc *chan tiffImage, dsc *chan bool, l
 		} else {
 			if file.IsDir() && recursive {
 				wg.Add(1)
-				findImagesInDir(wg, itcc, dsc, utils.TranslatePath(path.Join(locationPath, file.Name())), inputType, recursive)
+				findImagesInDir(wg, itcc, dsc, utils.TranslatePath(path.Join(locationPath, file.Name())), inputTypePrefixToMatch, inputType, recursive)
 			}
 		}
 	}
@@ -1443,20 +1444,19 @@ func createDirectoryIfNotExists(dir string) error {
 	return nil
 }
 
-func parseInputOutput(inputType string, outputType string, supportedInputTypes []string, supportOutputTypes []string) (string, string, error) {
+func parseInputOutputTypes(inputType string, outputType string, supportedInputTypes []string, supportOutputTypes []string) (string, string, error) {
 
-	r := regexp.MustCompile("(\\w+)\\.(\\w+)")
+	//if the input type is *.nef then don't filter on file name
+
+	r := regexp.MustCompile("(\\w+|\\*)\\.(\\w+)")
 	res := r.FindStringSubmatch(inputType)
 
 	if len(res) == 0 {
-		return "", "", fmt.Errorf("Input type %s format not recognised", inputType)
+		return "", "", fmt.Errorf("Input type %s format not recognised, make sure input type matches <*|filename>.<typeext>", inputType)
 	}
 
-	var inputPrefix string
-	if len(res) > 1 {
-		inputPrefix = res[0]
-		inputType = res[1]
-	}
+	inputPrefix := res[1]
+	inputType = "." + res[2]
 
 	if !utils.SSliceContains(supportedInputTypes, inputType) {
 		return "", "", fmt.Errorf("Input type %s not supported", inputType)
@@ -1465,4 +1465,6 @@ func parseInputOutput(inputType string, outputType string, supportedInputTypes [
 	if !utils.SSliceContains(supportOutputTypes, outputType) {
 		return "", "", fmt.Errorf("Output type %s not supported", outputType)
 	}
+
+	return inputPrefix, inputType, nil
 }
