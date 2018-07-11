@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	VER_NUM = "v0.0.1a"
+	VER_NUM = "v0.0.2a"
 )
 
 func outputUsage() {
