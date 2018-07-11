@@ -9,7 +9,7 @@ foreach($i in $GOOS_ENVS) {
     foreach($j in $GOARCHS) {
         if ($j -eq "arm" -and $i -ne "linux") { continue }
         $OUTPUTFOLDER = "clover-v$VERSION-$i-$j"
-        $OUTPUTPATH = "bin\v$VERSION\$OUTPUTFOLDER\clover$WINEXT"
+        $OUTPUTPATH = "bin\v$VERSION\$OUTPUTFOLDER\clover-v$VERSION$WINEXT"
         $BUILDSTR = "env GOOS=$i GOARCH=$j go build -o $OUTPUTPATH"
         Invoke-Expression "& $BUILDSTR"
         Compress-Archive -Path $OUTPUTPATH -DestinationPath "bin\v$VERSION\$OUTPUTFOLDER.zip"
