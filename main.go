@@ -50,7 +50,8 @@ func main() {
 func runTool(toolFlag string) {
 	//kind of hack to force flag parser to find tool argument flags correctly
 	os.Args = os.Args[1:]
-	if toolFlag == "/sdc" {
+	switch toolFlag {
+	case "/sdc":
 		locationPath := flag.String("l", "", "Location to write data to.")
 		sizeToWrite := flag.Int("s", 0, "Size of total data to write.")
 		skipFileIntegrityCheck := flag.Bool("sic", false, "Skip verifying output file integrity.")
@@ -60,8 +61,7 @@ func runTool(toolFlag string) {
 		flag.Parse()
 
 		cltools.RunSdc(*locationPath, *sizeToWrite, *skipFileIntegrityCheck, *dontDeleteFiles)
-
-	} else if toolFlag == "/rtc" {
+	case "/rtc":
 		sourceDirectory := flag.String("id", "", "Location containing raw images to convert.")
 		outputDirectory := flag.String("od", "", "Location to save compressed images.")
 		inputType := flag.String("it", "", "Extension of image type to convert.")
@@ -77,7 +77,7 @@ func runTool(toolFlag string) {
 		flag.Parse()
 
 		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *showConversionOutput, *overwrite, *recursive, *retainFolderStructure)
-	} else {
+	default:
 		outputUsageAndClose()
 	}
 }
