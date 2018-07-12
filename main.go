@@ -77,6 +77,14 @@ func runTool(toolFlag string) {
 		flag.Parse()
 
 		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *showConversionOutput, *overwrite, *recursive, *retainFolderStructure)
+	case "/tee":
+		sourceDirectory := flag.String("id", "", "Location containing images from which to export EXIF data.")
+		logging.OutputDateTime, logging.OutputPath, logging.OutputLogLevelFlag, logging.OutputArrowSuffix = false, false, false, false
+		setLoggingLevel()
+
+		flag.Parse()
+
+		cltools.RunTee(*sourceDirectory)
 	default:
 		outputUsageAndClose()
 	}
