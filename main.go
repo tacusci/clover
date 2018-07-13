@@ -84,7 +84,7 @@ func runTool(toolFlag string) {
 
 		flag.Parse()
 
-		cltools.RunTee(*sourceDirectory)
+		cltools.RunTee(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *showConversionOutput, *overwrite, *recursive, *retainFolderStructure)
 	default:
 		outputUsageAndClose()
 	}
