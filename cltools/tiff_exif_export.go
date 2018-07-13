@@ -90,7 +90,7 @@ func exportRawImagesExifsToFile(wg *sync.WaitGroup, itee *chan img.TiffImage, ds
 			ri := <-*itee
 			wg.Add(1)
 			if ri != nil {
-				convertToCompressed(ri, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, inputDirectory, outputDirectory, convertedImageCount)
+				exportEXIFs(ri, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, inputDirectory, outputDirectory, convertedImageCount)
 			}
 			wg.Done()
 		} else {
@@ -152,4 +152,7 @@ func exportEXIFs(ti img.TiffImage, inputType string, outputType string, showConv
 
 	ti.Load()
 
+	for i := 0; i < len(ti.GetRawImage().Ifds); i++ {
+
+	}
 }
