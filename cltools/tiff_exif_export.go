@@ -4,10 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/tacusci/clover/img"
+	"github.com/tacusci/clover/utils"
 	"github.com/tacusci/logging"
 )
 
@@ -77,11 +80,46 @@ func exportRawImageEXIF(wg *sync.WaitGroup, iteec *chan img.TiffImage, dsc *chan
 			ri := <-*iteec
 			wg.Add(1)
 			if ri != nil {
-
+				exportRawEXIFExport(ri, itype, showExportOutput, overwrite, sdir, odir)
 			}
 			wg.Done()
 		} else {
 			wg.Done()
 		}
+	}
+}
+
+func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, overwrite bool, sdir string, odir string) {
+	if ti == nil {
+		return
+	}
+
+	if ti.GetRawImage().File == nil {
+		return
+	}
+
+	defer ti.GetRawImage().File.Close()
+
+	sb := strings.Builder{}
+	sb.WriteString(strings.TrimRight(odir, string(os.PathSeparator)))
+
+	var fileNameToAdd string
+	fileNameToAdd = filepath.Base(ti.GetRawImage().File.Name())
+	fileNameToAdd = strings.Replace(fileNameToAdd, itype, ".txt", 1)
+	fileNameToAdd = strings.Replace(fileNameToAdd, strings.ToUpper(itype), ".txt", 1)
+
+	sb.WriteString(fileNameToAdd)
+
+	outputPath := utils.TranslatePath(sb.String())
+
+	if _, err := os.Stat(outputPath); err == nil && !overwrite {
+		if showExportOutput {
+			logging.Error(" [FAILED] (Output EXIF export file already exists.)")
+		}
+		return
+	}
+
+	for i := 0; i < len(ti.GetRawImage().Ifds); i++ {
+		logging.Info(string(ti.GetRawImage().Ifds[i].ImageMakeTag))
 	}
 }
