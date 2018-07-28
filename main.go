@@ -18,6 +18,7 @@ func outputUsage() {
 	println("Usage: " + os.Args[0] + " </TOOLFLAG>")
 	fmt.Printf("\t/sdc (StorageDeviceChecker) - Tool for checking size of storage devices.\n")
 	fmt.Printf("\t/rtc (RawToCompressed) - Tool for batch compressing raw images.\n")
+	fmt.Printf("\t/tee (TIFFEXIFExport) - Tool for batch exporting of raw images EXIF data.")
 }
 
 func outputUsageAndClose() {
@@ -79,12 +80,18 @@ func runTool(toolFlag string) {
 		cltools.RunRtc(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *outputType, *showConversionOutput, *overwrite, *recursive, *retainFolderStructure)
 	case "/tee":
 		sourceDirectory := flag.String("id", "", "Location containing images from which to export EXIF data.")
+		outputDirectory := flag.String("od", "", "Location to save exported EXIF data.")
+		inputType := flag.String("it", "", "Extension of image type to export EXIF from.")
+		overwrite := flag.Bool("ow", false, "Overwrite existing export files in output location.")
+		recursive := flag.Bool("rs", false, "Scan all sub folders in root recursively.")
+		showConversionOutput := flag.Bool("so", false, "Show exporting output.")
+		timeStamp := flag.Bool("ts", false, "Adds time stamp to show process duration in milliseconds in console output.")
 		logging.OutputDateTime, logging.OutputPath, logging.OutputLogLevelFlag, logging.OutputArrowSuffix = false, false, false, false
 		setLoggingLevel()
 
 		flag.Parse()
 
-		cltools.RunTee(*sourceDirectory)
+		cltools.RunTee(*timeStamp, *sourceDirectory, *outputDirectory, *inputType, *showConversionOutput, *overwrite, *recursive)
 	default:
 		outputUsageAndClose()
 	}
