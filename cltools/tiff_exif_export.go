@@ -14,83 +14,73 @@ import (
 	"github.com/tacusci/logging"
 )
 
-func RunTee(timeStamp bool, locationpath string, outputDirectory string, inputType string, outputType string, showConversionOutput bool, overwrite bool, recursive bool, retainFolderStructure bool) {
-	if len(locationpath) == 0 || len(inputType) == 0 || len(outputType) == 0 {
+func RunTee(ts bool, sdir string, odir string, itype string, showExportOutput bool, overwrite bool, recursive bool) {
+	if len(sdir) == 0 || len(odir) == 0 || len(itype) == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	fmt.Printf("Clover - Running Tiff EXIF Export tool...\n")
+	fmt.Printf("Clover - Running TIFF EXIF export tool...\n")
 
 	var st time.Time
-	if timeStamp {
+	if ts {
 		st = time.Now()
 	}
 
-	err := createDirectoryIfNotExists(outputDirectory)
+	err := createDirectoryIfNotExists(odir)
 	if err != nil {
 		logging.Error(err.Error())
 		return
 	}
 
-	var convertedImageCount uint32
 	supportedInputTypes := []string{".nef"}
 	supportedOutputTypes := []string{".jpg", ".png"}
 
-	inputTypePrefixToMatch, inputType, err := parseInputOutputTypes(inputType, outputType, supportedInputTypes, supportedOutputTypes)
+	inputTypePrefixToMatch, inputType, err := parseInputOutputTypes(itype, "", supportedInputTypes, supportedOutputTypes)
 	if err != nil {
 		logging.Error(err.Error())
 		return
 	}
 
 	doneSearchingChan := make(chan bool, 32)
-	imagesToParseChan := make(chan img.TiffImage, 32)
+	imagesToExportExifChan := make(chan img.TiffImage, 32)
 
-	if isDir, err := isDirectory(locationpath); isDir {
+	if isDir, err := isDirectory(sdir); isDir {
 		//file searching wait group
 		var fswg sync.WaitGroup
-		//images to export EXIF group
-		var icwg sync.WaitGroup
+		//images to export EXIF wait group
+		var ieewg sync.WaitGroup
 		//add a wait for the initial single call of 'findImagesInDir'
 		fswg.Add(1)
-		go findImagesInDir(&fswg, &imagesToParseChan, &doneSearchingChan, locationpath, inputTypePrefixToMatch, inputType, recursive)
-		//add a wait for the call of 'convertRawImagesToCompressed'
-		icwg.Add(1)
-		go exportRawImagesExifsToFile(&icwg, &imagesToParseChan, &doneSearchingChan, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, locationpath, outputDirectory, &convertedImageCount)
+		go findImagesInDir(&fswg, &imagesToExportExifChan, &doneSearchingChan, sdir, inputTypePrefixToMatch, inputType, recursive)
+		ieewg.Add(1)
+		go exportRawImageEXIF(&ieewg, &imagesToExportExifChan, &doneSearchingChan, itype, showExportOutput, overwrite, recursive, sdir, odir)
 		//main thread doesn't wait after firing these goroutines, so force it to
 		//wait until the file searching thread has finished
 		fswg.Wait()
-		//then tell the image conversion goroutine that there's no more images coming to convert
+		//then tell the image exif export goroutine that there's no more images coming to export exif's
 		doneSearchingChan <- true
-		//wait on the image conversion goroutine until it's finished converting all images it's already been working on
-		icwg.Wait()
+		//wait on the image exif export goroutine until it's finished with all images it's already been working on
+		ieewg.Wait()
 		//both worker goroutines have finished, main thread continues
 	} else {
 		if err != nil {
 			logging.ErrorAndExit(err.Error())
 		}
 	}
-	close(doneSearchingChan)
-	close(imagesToParseChan)
-	var plural string
-	if convertedImageCount != 1 {
-		plural = "s"
-	} else {
-		plural = ""
-	}
-	logging.Info(fmt.Sprintf("Successfully converted %d raw image%s", convertedImageCount, plural))
-	if timeStamp {
+
+	if ts {
 		logging.Info(fmt.Sprintf("Time taken: %d ms", time.Since(st).Nanoseconds()/1000000))
 	}
 }
 
-func exportRawImagesExifsToFile(wg *sync.WaitGroup, itee *chan img.TiffImage, dsc *chan bool, inputType string, outputType string, showConversionOutput bool, overwrite bool, retainFolderStructure bool, inputDirectory string, outputDirectory string, convertedImageCount *uint32) {
+func exportRawImageEXIF(wg *sync.WaitGroup, iteec *chan img.TiffImage, dsc *chan bool, itype string, showExportOutput bool, overwrite bool, recursive bool, sdir string, odir string) {
 	for {
 		if !<-*dsc {
-			ri := <-*itee
+			ri := <-*iteec
 			wg.Add(1)
 			if ri != nil {
-				exportEXIFs(ri, inputType, outputType, showConversionOutput, overwrite, retainFolderStructure, inputDirectory, outputDirectory, convertedImageCount)
+				exportRawEXIFExport(ri, itype, showExportOutput, overwrite, sdir, odir)
 			}
 			wg.Done()
 		} else {
@@ -99,7 +89,7 @@ func exportRawImagesExifsToFile(wg *sync.WaitGroup, itee *chan img.TiffImage, ds
 	}
 }
 
-func exportEXIFs(ti img.TiffImage, inputType string, outputType string, showConversionOutput bool, overwrite bool, retainFolderStructure bool, inputDirectory string, outputDirectory string, convertedImageCount *uint32) {
+func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, overwrite bool, sdir string, odir string) {
 	if ti == nil {
 		return
 	}
@@ -111,48 +101,25 @@ func exportEXIFs(ti img.TiffImage, inputType string, outputType string, showConv
 	defer ti.GetRawImage().File.Close()
 
 	sb := strings.Builder{}
-	sb.WriteString(strings.TrimRight(outputDirectory, string(os.PathSeparator)))
-
-	if retainFolderStructure {
-		subDirToAdd := strings.Replace(ti.GetRawImage().File.Name(), inputDirectory, "", -1)
-		subDirToAdd = strings.Replace(subDirToAdd, filepath.Base(ti.GetRawImage().File.Name()), "", -1)
-		if subDirToAdd != string(os.PathSeparator) {
-			sb.WriteString(string(os.PathSeparator))
-		}
-		sb.WriteString(subDirToAdd)
-		if err := createDirectoryIfNotExists(sb.String()); err != nil {
-			logging.Error(err.Error())
-			return
-		}
-	}
+	sb.WriteString(strings.TrimRight(odir, string(os.PathSeparator)))
 
 	var fileNameToAdd string
 	fileNameToAdd = filepath.Base(ti.GetRawImage().File.Name())
-	fileNameToAdd = strings.Replace(fileNameToAdd, inputType, outputType, 1)
-	fileNameToAdd = strings.Replace(fileNameToAdd, strings.ToUpper(inputType), strings.ToUpper(outputType), 1)
-
-	if !retainFolderStructure {
-		sb.WriteRune(os.PathSeparator)
-	}
+	fileNameToAdd = strings.Replace(fileNameToAdd, itype, ".txt", 1)
+	fileNameToAdd = strings.Replace(fileNameToAdd, strings.ToUpper(itype), ".txt", 1)
 
 	sb.WriteString(fileNameToAdd)
 
 	outputPath := utils.TranslatePath(sb.String())
 
-	if showConversionOutput {
-		fmt.Printf("Converting image %s to %s", ti.GetRawImage().File.Name(), outputType)
-	}
-
 	if _, err := os.Stat(outputPath); err == nil && !overwrite {
-		if showConversionOutput {
-			logging.Error(" [FAILED] (Output result file already exists.)")
+		if showExportOutput {
+			logging.Error(" [FAILED] (Output EXIF export file already exists.)")
 		}
 		return
 	}
 
-	ti.Load()
-
 	for i := 0; i < len(ti.GetRawImage().Ifds); i++ {
-
+		logging.Info(string(ti.GetRawImage().Ifds[i].ImageMakeTag))
 	}
 }

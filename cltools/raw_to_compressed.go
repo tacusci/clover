@@ -275,7 +275,11 @@ func parseInputOutputTypes(inputType string, outputType string, supportedInputTy
 	}
 
 	if !utils.SSliceContains(supportOutputTypes, outputType) {
-		return "", "", fmt.Errorf("Output type %s not supported", outputType)
+		if len(outputType) > 0 {
+			return "", "", fmt.Errorf("Output type %s not supported", outputType)
+		} else {
+			return inputPrefix, inputType, nil
+		}
 	}
 
 	return inputPrefix, inputType, nil
