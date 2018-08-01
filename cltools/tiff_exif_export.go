@@ -36,7 +36,7 @@ func RunTee(ts bool, sdir string, odir string, itype string, showExportOutput bo
 	supportedInputTypes := []string{".nef"}
 	supportedOutputTypes := []string{".jpg", ".png"}
 
-	inputTypePrefixToMatch, inputType, err := parseInputOutputTypes(itype, "", supportedInputTypes, supportedOutputTypes)
+	inputTypePrefixToMatch, itype, err := parseInputOutputTypes(itype, "", supportedInputTypes, supportedOutputTypes)
 	if err != nil {
 		logging.Error(err.Error())
 		return
@@ -52,7 +52,7 @@ func RunTee(ts bool, sdir string, odir string, itype string, showExportOutput bo
 		var ieewg sync.WaitGroup
 		//add a wait for the initial single call of 'findImagesInDir'
 		fswg.Add(1)
-		go findImagesInDir(&fswg, &imagesToExportExifChan, &doneSearchingChan, sdir, inputTypePrefixToMatch, inputType, recursive)
+		go findImagesInDir(&fswg, &imagesToExportExifChan, &doneSearchingChan, sdir, inputTypePrefixToMatch, itype, recursive)
 		ieewg.Add(1)
 		go exportRawImageEXIF(&ieewg, &imagesToExportExifChan, &doneSearchingChan, itype, showExportOutput, overwrite, recursive, sdir, odir)
 		//main thread doesn't wait after firing these goroutines, so force it to
@@ -102,6 +102,7 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 
 	sb := strings.Builder{}
 	sb.WriteString(strings.TrimRight(odir, string(os.PathSeparator)))
+	sb.WriteRune(os.PathSeparator)
 
 	var fileNameToAdd string
 	fileNameToAdd = filepath.Base(ti.GetRawImage().File.Name())
@@ -112,14 +113,44 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 
 	outputPath := utils.TranslatePath(sb.String())
 
+	if showExportOutput {
+		fmt.Printf("Exporting image %s EXIFs", ti.GetRawImage().File.Name())
+	}
+
 	if _, err := os.Stat(outputPath); err == nil && !overwrite {
 		if showExportOutput {
-			logging.Error(" [FAILED] (Output EXIF export file already exists.)")
+			logging.Error(" [FAILED] (Output result file already exists.)")
 		}
 		return
 	}
 
-	for i := 0; i < len(ti.GetRawImage().Ifds); i++ {
-		logging.Info(string(ti.GetRawImage().Ifds[i].ImageMakeTag))
+	err := ti.Load()
+	if err != nil {
+		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		return
+	}
+
+	sb.Reset()
+
+	for index, ifd := range ti.GetRawImage().Ifds {
+		sb.WriteString(fmt.Sprintf("--------- IFD%d's EXIF data ---------\n", index))
+		if ifd.BitsPerSample != nil && len(ifd.BitsPerSample) > 0 {
+			sb.WriteString(fmt.Sprintf("Bits per sample -> %b\n", ifd.BitsPerSample))
+		}
+		sb.WriteString(fmt.Sprintf("%s\n", ifd.ImageModelTag))
+		sb.WriteString(fmt.Sprintf("--------- IFD%d's EXIF data  ---------\n", index))
+	}
+
+	ofile, err := os.Create(outputPath)
+	defer ofile.Close()
+	if err != nil {
+		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		return
+	}
+	_, err = ofile.WriteString(sb.String())
+	if err != nil {
+		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+	} else {
+		logging.Info(" [SUCCESS]")
 	}
 }
