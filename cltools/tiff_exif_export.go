@@ -1,6 +1,7 @@
 package cltools
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -133,24 +134,40 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 	sb.Reset()
 
 	for index, ifd := range ti.GetRawImage().Ifds {
-		sb.WriteString(fmt.Sprintf("--------- IFD%d's EXIF data ---------\n", index))
+		sb.WriteString(fmt.Sprintf("--------- START IFD%d START ---------\n", index))
+
 		if ifd.BitsPerSample != nil && len(ifd.BitsPerSample) > 0 {
 			sb.WriteString(fmt.Sprintf("Bits per sample -> %b\n", ifd.BitsPerSample))
 		}
-		sb.WriteString(fmt.Sprintf("%s\n", ifd.ImageModelTag))
-		sb.WriteString(fmt.Sprintf("--------- IFD%d's EXIF data  ---------\n", index))
+
+		if ifd.ImageModelTag != nil && len(ifd.ImageModelTag) > 0 {
+			sb.WriteString(tidiedStringForOutput("Camera model", ifd.ImageModelTag))
+		}
+
+		sb.WriteString(fmt.Sprintf("--------- END IFD%d END  ---------\n\n", index))
 	}
 
 	ofile, err := os.Create(outputPath)
 	defer ofile.Close()
 	if err != nil {
-		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		if showExportOutput {
+			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		}
 		return
 	}
 	_, err = ofile.WriteString(sb.String())
+	ofile.Sync()
 	if err != nil {
-		logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		if showExportOutput {
+			logging.Error(fmt.Sprintf(" [FAILED] (%s)", err.Error()))
+		}
 	} else {
-		logging.Info(" [SUCCESS]")
+		if showExportOutput {
+			logging.Info(" [SUCCESS]")
+		}
 	}
+}
+
+func tidiedStringForOutput(dt string, b []byte) string {
+	return fmt.Sprintf("%s -> %s\n", dt, bytes.Trim(b, "\x00"))
 }
