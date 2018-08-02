@@ -144,7 +144,27 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 			sb.WriteString(tidiedStringForOutput("Camera model", ifd.ImageModelTag))
 		}
 
+		if ifd.ImageMakeTag != nil && len(ifd.ImageMakeTag) > 0 {
+			sb.WriteString(tidiedStringForOutput("Camera make", ifd.ImageMakeTag))
+		}
+
 		sb.WriteString(fmt.Sprintf("--------- END IFD%d END  ---------\n\n", index))
+
+		if ifd.GpsIFD != nil {
+			sb.WriteString("--------- START GPS IFD ---------\n")
+
+			if ifd.GpsIFD.GPSVersionID != nil {
+				sb.WriteString(fmt.Sprintf("GPS Version -> %d\n", ifd.GpsIFD.GPSVersionID))
+			}
+
+			sb.WriteString(fmt.Sprintf("GPS Time -> %d\n", ifd.GpsIFD.GPSTimeStamp))
+
+			if len(ifd.GpsIFD.GPSSatellites) > 0 {
+				sb.WriteString(tidiedStringForOutput("GPS Satellites", []byte(ifd.GpsIFD.GPSSatellites)))
+			}
+
+			sb.WriteString("--------- END GPS IFD ---------\n\n")
+		}
 	}
 
 	ofile, err := os.Create(outputPath)
