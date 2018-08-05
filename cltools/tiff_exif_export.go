@@ -90,6 +90,14 @@ func exportRawImageEXIF(wg *sync.WaitGroup, iteec *chan img.TiffImage, dsc *chan
 	}
 }
 
+func bytesSliceTotalSum(bs []byte) uint32 {
+	var total uint32 = 0
+	for _, i := range bs {
+		total += uint32(i)
+	}
+	return total
+}
+
 func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, overwrite bool, sdir string, odir string) {
 	if ti == nil {
 		return
@@ -136,7 +144,7 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 	for index, ifd := range ti.GetRawImage().Ifds {
 		sb.WriteString(fmt.Sprintf("--------- START IFD%d START ---------\n", index))
 
-		if ifd.BitsPerSample != nil && len(ifd.BitsPerSample) > 0 {
+		if ifd.BitsPerSample != nil && len(ifd.BitsPerSample) > 0 && bytesSliceTotalSum(ifd.BitsPerSample) > 0 {
 			sb.WriteString(fmt.Sprintf("Bits per sample -> %b\n", ifd.BitsPerSample))
 		}
 
@@ -148,22 +156,33 @@ func exportRawEXIFExport(ti img.TiffImage, itype string, showExportOutput bool, 
 			sb.WriteString(tidiedStringForOutput("Camera make", ifd.ImageMakeTag))
 		}
 
+		if ifd.CFAPattern2 > 0 {
+			sb.WriteString(fmt.Sprintf("CFA Pattern 2 %d", ifd.CFAPattern2))
+		}
+
 		sb.WriteString(fmt.Sprintf("--------- END IFD%d END  ---------\n\n", index))
 
 		if ifd.GpsIFD != nil {
-			sb.WriteString("--------- START GPS IFD ---------\n")
 
-			if ifd.GpsIFD.GPSVersionID != nil {
-				sb.WriteString(fmt.Sprintf("GPS Version -> %d\n", ifd.GpsIFD.GPSVersionID))
+			gpsTimeStamp := ifd.GpsIFD.GPSTimeStamp
+			timeStampValTotal := gpsTimeStamp[0] + gpsTimeStamp[1] + gpsTimeStamp[2]
+
+			if timeStampValTotal > 0 {
+				sb.WriteString("--------- START GPS IFD ---------\n")
+
+				if ifd.GpsIFD.GPSVersionID != nil && bytesSliceTotalSum(ifd.GpsIFD.GPSVersionID) > 0 {
+					sb.WriteString(fmt.Sprintf("GPS Version -> %d\n", ifd.GpsIFD.GPSVersionID))
+				}
+
+				sb.WriteString(fmt.Sprintf("GPS Time -> %d\n", ifd.GpsIFD.GPSTimeStamp))
+
+				if len(ifd.GpsIFD.GPSSatellites) > 0 {
+					sb.WriteString(tidiedStringForOutput("GPS Satellites", []byte(ifd.GpsIFD.GPSSatellites)))
+				}
+
+				sb.WriteString("--------- END GPS IFD ---------\n\n")
 			}
 
-			sb.WriteString(fmt.Sprintf("GPS Time -> %d\n", ifd.GpsIFD.GPSTimeStamp))
-
-			if len(ifd.GpsIFD.GPSSatellites) > 0 {
-				sb.WriteString(tidiedStringForOutput("GPS Satellites", []byte(ifd.GpsIFD.GPSSatellites)))
-			}
-
-			sb.WriteString("--------- END GPS IFD ---------\n\n")
 		}
 	}
 
