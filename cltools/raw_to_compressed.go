@@ -196,7 +196,7 @@ func convertToCompressed(ti img.TiffImage, inputType string, outputType string, 
 	outputPath := utils.TranslatePath(sb.String())
 
 	if showConversionOutput {
-		fmt.Printf("Converting image %s to %s", ti.GetRawImage().File.Name(), outputType)
+		logging.InfoNoColor(fmt.Sprintf("Converting image %s to %s", ti.GetRawImage().File.Name(), outputType))
 	}
 
 	if _, err := os.Stat(outputPath); err == nil && !overwrite {
