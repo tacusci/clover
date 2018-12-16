@@ -57,7 +57,6 @@ func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 			filename = utils.TranslatePath(filename)
 			file, err := os.Create(filename)
 			check(err)
-			defer file.Close()
 			bufferedWriter := bufio.NewWriter(file)
 			rand.Seed(int64(fileCount))
 			bytesToWrite := make([]byte, 1024*1000)
@@ -74,6 +73,7 @@ func writeDataToLocation(location string, size int) (int, int, time.Duration) {
 				rColor.Println("Unable to write more data")
 				return fileCount, totalWrittenBytes, time.Now().Sub(startTime)
 			}
+			file.Close()
 			totalWrittenBytes += bytesWritten
 			fileCount++
 		} else {
