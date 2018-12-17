@@ -28,11 +28,12 @@ func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, d
 		sem <- true
 		go writeFile(fmt.Sprintf("%s%scloverdata%d.bin", locationPath, string(os.PathSeparator), writtenFilesCount), writtenFilesCount, sem)
 		writtenFilesCount++
-		time.Sleep(5)
+		time.Sleep(2)
 	}
 
 	for i := 0; i < cap(sem); i++ {
 		sem <- true
+		time.Sleep(2)
 	}
 }
 
