@@ -58,7 +58,7 @@ func writeFile(locationPath string, fileCount int, sem chan bool) {
 		bytesToWrite[i] = byte(rand.Intn(254))
 	}
 
-	file.Write(bytesToWrite)
+	_, err = file.Write(bytesToWrite)
 
 	if err != nil {
 		logging.Error(err.Error())
