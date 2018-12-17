@@ -3,8 +3,9 @@ package cltools
 import (
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
-	"sync"
+	"time"
 
 	"github.com/tacusci/logging"
 )
@@ -16,22 +17,52 @@ func RunSdc(locationPath string, sizeToWrite int, skipFileIntegrityCheck bool, d
 		os.Exit(1)
 	}
 
+	//maxiumum number of running goroutines
+	sem := make(chan bool, 1000)
+
 	filesToWrite := sizeToWrite / 1024 / 1024
 
 	var writtenFilesCount int
 
-	var wg sync.WaitGroup
-
 	for writtenFilesCount < filesToWrite {
-		wg.Add(1)
-		go writeFile(fmt.Sprintf("%s%s%d", locationPath, string(os.PathSeparator), writtenFilesCount), &wg)
+		sem <- true
+		go writeFile(fmt.Sprintf("%s%scloverdata%d.bin", locationPath, string(os.PathSeparator), writtenFilesCount), writtenFilesCount, sem)
 		writtenFilesCount++
+		time.Sleep(5)
 	}
 
-	wg.Wait()
+	for i := 0; i < cap(sem); i++ {
+		sem <- true
+	}
 }
 
-func writeFile(locationPath string, wg *sync.WaitGroup) {
-	logging.Info(fmt.Sprintf("Written file %s", locationPath))
-	wg.Done()
+func writeFile(locationPath string, fileCount int, sem chan bool) {
+	defer func() { <-sem }()
+
+	file, err := os.Create(locationPath)
+
+	if err != nil {
+		logging.ErrorAndExit(err.Error())
+	}
+
+	rand.Seed(int64(fileCount))
+
+	//bytesToWrite := make([]byte, 1024*1000)
+	bytesToWrite := make([]byte, 1024*1000)
+
+	for i := 0; i < len(bytesToWrite)/2; i++ {
+		bytesToWrite[i] = 0
+	}
+
+	for i := len(bytesToWrite) / 2; i < len(bytesToWrite); i++ {
+		bytesToWrite[i] = byte(rand.Intn(254))
+	}
+
+	file.Write(bytesToWrite)
+
+	if err != nil {
+		logging.Error(err.Error())
+	}
+
+	file.Close()
 }
